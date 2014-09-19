@@ -48,7 +48,9 @@ class ConvertBridgeToCGCSL extends Command {
 		);
 		
 		$conn = ftp_connect($config['host']);
+		ftp_pasv($conn, true);
 		ftp_login($conn, $config['username'], $config['password']);
+		ftp_pasv($conn, true);
 		$list = ftp_nlist($conn, $config['path']);
 		
 		foreach($list as $file)
@@ -57,6 +59,7 @@ class ConvertBridgeToCGCSL extends Command {
 				continue;
 			}
 			ob_start();
+			ftp_pasv($conn, true);
 			ftp_get($conn, "php://output", $file, FTP_BINARY) || exit('error getting file through ftp.');
 			$file_content = ob_get_contents();
 			ob_end_clean();			
@@ -74,6 +77,7 @@ class ConvertBridgeToCGCSL extends Command {
 			
 			echo $stored_file['file'] . ' converted' . "\n";
 			
+			ftp_pasv($conn, true);
 			ftp_put($conn, $config['path'] . '/' . $stored_file['file'], $stored_file['full'], FTP_BINARY) || exit('error putting file through ftp.');
 			
 			unlink($stored_file['full']);
