@@ -13,3 +13,4 @@
 
 Artisan::add(new ConvertBridgeToCGCSL);
 Artisan::add(new ConvertBridgeToFPT);
+Artisan::add(new ConvertFPTToBridge);
