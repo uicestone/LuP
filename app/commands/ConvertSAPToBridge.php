@@ -4,14 +4,14 @@ use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 
-class ConvertFPTToBridge extends Command {
+class ConvertSAPToBridge extends Command {
 
 	/**
 	 * The console command name.
 	 *
 	 * @var string
 	 */
-	protected $name = 'convert:fpt-bridge';
+	protected $name = 'convert:sap-bridge';
 
 	/**
 	 * The console command description.
@@ -65,11 +65,13 @@ class ConvertFPTToBridge extends Command {
 			
 			Excel::load(storage_path() . '/input.' . File::extension($path), function($reader) use($conn, $path)
 			{
-				$result = $reader->toArray();
+				$result = $reader->noHeading()->toArray();
+
 				$data = array();
 
 				foreach($result[0] as $sheet_line){
-					if($sheet_line[12] !== 'Success'){
+
+					if(strtolower(trim($sheet_line[11])) !== 'success'){
 						continue;
 					}
 					$data[] = $sheet_line;
@@ -80,13 +82,13 @@ class ConvertFPTToBridge extends Command {
 				foreach($data as $item){
 					$line_data = array(
 						600,
-						$item[7] * 100, // Amount
-						$item[10]->format('Ymd'),
+						- $item[6] * 100, // Amount
+						$item[9]->format('Ymd'),
 						null,
 						null,
-						$item[3], // Document No.
-						$item[5], // Report ID
-						$item[6], // Currency
+						$item[7], // Document No.
+						$item[4], // Report ID
+						$item[5], // Currency
 						null,
 						null,
 						null,
