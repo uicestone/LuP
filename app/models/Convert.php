@@ -18,7 +18,7 @@ class Convert {
 	protected static function get_old_vendor($new_vendor)
 	{
 		$mapping = DB::table('cgcsl_vendor_mapping')->where('vendor_code_new', $new_vendor)->first();
-		return $mapping ? $mapping->vendor_code_old : 'N/A';
+		return $mapping ? $mapping->vendor_code_old : $new_vendor;
 	}
 	
 	protected static function get_reference($item){
