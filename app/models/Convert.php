@@ -2,7 +2,7 @@
 
 class Convert {
 	
-	protected static function get_vendor_name($item)
+	protected static function getVendorName($item)
 	{
 		$vendor_code = null;
 		foreach($item['body'] as $record){
@@ -15,13 +15,13 @@ class Convert {
 		return $mapping ? $mapping->chinese_name : 'N/A';
 	}
 
-	protected static function get_old_vendor($new_vendor)
+	protected static function getOldVendor($new_vendor)
 	{
 		$mapping = DB::table('cgcsl_vendor_mapping')->where('vendor_code_new', $new_vendor)->first();
 		return $mapping ? $mapping->vendor_code_old : $new_vendor;
 	}
 	
-	protected static function get_reference($item){
+	protected static function getReference($item){
 		foreach($item['body'] as $record){
 			if($record[12]){
 				return $record['12'];
@@ -60,7 +60,7 @@ class Convert {
 			foreach($item['body'] as $index => $record)
 			{
 				$output[] = array(
-					'Change the Counter No when New Doc No is to be created' => $trasaction_no, // Transaction number
+					'Transaction NO.' => $trasaction_no, // Transaction number
 					'Doc.Header text' => $record[6], // Report ID
 					'Company code' => $item['head'][2], // Company code
 					'Document Date' => date('d.m.Y', strtotime($item['head'][3])), // Document Date
@@ -68,13 +68,13 @@ class Convert {
 					'Year' => date('Y', strtotime($item['head'][4])),
 					'Period' => date('m', strtotime($item['head'][4])),
 					'Document Type' => 'KR',
-					'Reference' => self::get_reference($item), // Partner bank type
+					'Reference' => self::getReference($item), // Partner bank type
 					'Document Line item no.' => $document_line_item_no,
 					'G/L Account' => $record[4], // G/L Account,
 					'Customer' => null,
-					'Vendor' => $record[3] ? self::get_old_vendor($record[3]) : null, // Vendor
-					'Sp.GL Indicator' => $record[13], // Sepcial G/L Indicator
-					'Text' => $record[3] ? $item['head'][6] : ($record[9] . '/' . self::get_vendor_name($item)), // Comments
+					'Vendor' => $record[3] ? self::getOldVendor($record[3]) : null, // Vendor
+					'Sp.GL Indicator' => trim($record[13]), // Sepcial G/L Indicator
+					'Text' => $record[3] ? $item['head'][6] : ($record[9] . '/' . self::getVendorName($item)), // Comments
 					'Assignment ' => $record[11], // EPS
 					'Tax code' => $record[7], // Tax code
 					'Cost Center' => $record[10], // Cost Center
