@@ -84,7 +84,7 @@ class ConvertBridgeToFPT extends Command {
 //			ftp_pasv($conn, true);
 //			ftp_put($conn, $config['path'] . '/' . $stored_file['file'], $stored_file['full'], FTP_BINARY) || exit('error putting file through ftp.');
 			
-			unlink($stored_file['full']);
+//			unlink($stored_file['full']);
 			
 		}
 		
