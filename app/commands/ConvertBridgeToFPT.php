@@ -56,7 +56,7 @@ class ConvertBridgeToFPT extends Command {
 		
 		foreach($list as $file)
 		{
-			if(!preg_match('/.txt$/', $file)){
+			if(!preg_match('/.txt$/i', $file)){
 				continue;
 			}
 			ob_start();
@@ -73,7 +73,7 @@ class ConvertBridgeToFPT extends Command {
 				$line = preg_split('/\|+/', $line);
 			});
 			
-			$stored_file = Excel::create(preg_replace('/^.*\/|\.txt$/', '', $file), function($excel) use($data){
+			$stored_file = Excel::create(preg_replace('/^.*\/|\.txt$/i', '', $file), function($excel) use($data){
 				$excel->sheet('Sheet1', function($sheet) use($data){
 					$sheet->fromArray($data, null, 'A1', false, false);
 				});
@@ -81,10 +81,10 @@ class ConvertBridgeToFPT extends Command {
 			
 			echo $stored_file['file'] . ' converted' . "\n";
 			
-			ftp_pasv($conn, true);
-			ftp_put($conn, $config['path'] . '/' . $stored_file['file'], $stored_file['full'], FTP_BINARY) || exit('error putting file through ftp.');
+//			ftp_pasv($conn, true);
+//			ftp_put($conn, $config['path'] . '/' . $stored_file['file'], $stored_file['full'], FTP_BINARY) || exit('error putting file through ftp.');
 			
-//			unlink($stored_file['full']);
+			unlink($stored_file['full']);
 			
 		}
 		
