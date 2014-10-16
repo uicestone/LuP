@@ -48,22 +48,19 @@ class ConvertSAPToBridge extends Command {
 		);
 		
 		$conn = ftp_connect($config['host']);
+
 		ftp_pasv($conn, true);
 		ftp_login($conn, $config['username'], $config['password']);
-		ftp_pasv($conn, true);
-		$list = ftp_nlist($conn, $config['path']);
-//		$list = array('./SAE_ACCOUNT_CG_20140912.txt');
+		
+		$list = File::files(storage_path('imports'));
 		
 		foreach($list as $path)
 		{
-			if(!preg_match('/Payment/', $path) || (File::extension($path) !== 'xls' && File::extension($path) !== 'xlsx')){
+			if(!preg_match('/payment/i', $path) || (File::extension($path) !== 'xls' && File::extension($path) !== 'xlsx')){
 				continue;
 			}
 			
-			ftp_pasv($conn, true);
-			ftp_get($conn, storage_path() . '/input.' . File::extension($path), $path, FTP_BINARY) || exit('error getting file through ftp.');
-			
-			Excel::load(storage_path() . '/input.' . File::extension($path), function($reader) use($conn, $path)
+			Excel::load($path, function($reader) use($conn, $config, $path)
 			{
 				$result = $reader->noHeading()->toArray();
 
@@ -83,7 +80,7 @@ class ConvertSAPToBridge extends Command {
 					$line_data = array(
 						600,
 						- $item[6] * 100, // Amount
-						$item[9]->format('Ymd'),
+						method_exists($item[9], 'format') ? $item[9]->format('Ymd') : date('Ymd',strtotime($item[9])),
 						null,
 						null,
 						$item[7], // Document No.
@@ -96,14 +93,19 @@ class ConvertSAPToBridge extends Command {
 						null,
 					);
 					$output .= implode(',', $line_data) . "\n";
+					
+					$last_item_date = method_exists($item[9], 'format') ? $item[9]->format('Ymd') : date('Ymd',strtotime($item[9]));
+					
 				}
 
-				file_put_contents(storage_path() . '/output.txt', $output);
+				$export_file_name = '/PYMT_CONFIRM_' . $last_item_date . '.txt';
+				
+				file_put_contents(storage_path('exports') . '/' . $export_file_name, $output);
 
 				ftp_pasv($conn, true);
-				ftp_put($conn, preg_replace('/.xlsx*$/', '.txt', $path), storage_path() . '/output.txt', FTP_BINARY) || exit('error putting file through ftp.');
+				ftp_put($conn, $config['path'] . $export_file_name, storage_path('exports') . '/' . $export_file_name, FTP_BINARY) || exit('error putting file through ftp.');
 				
-				File::delete(array(storage_path() . '/output.txt', storage_path() . '/input.' . File::extension($path)));
+				File::delete(array(storage_path() . '/' . $export_file_name, storage_path() . '/*'));
 				
 				echo $path . ' converted' . "\n";
 			});
