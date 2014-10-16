@@ -103,9 +103,9 @@ class ConvertSAPToBridge extends Command {
 				file_put_contents(storage_path('exports') . '/' . $export_file_name, $output);
 
 				ftp_pasv($conn, true);
-				ftp_put($conn, $config['path'] . $export_file_name, storage_path('exports') . '/' . $export_file_name, FTP_BINARY) || exit('error putting file through ftp.');
+				ftp_put($conn, $config['path'] . '/' . $export_file_name, storage_path('exports') . '/' . $export_file_name, FTP_BINARY) || exit('error putting file through ftp.');
 				
-				File::delete(array(storage_path() . '/' . $export_file_name, storage_path() . '/*'));
+				File::delete(array(storage_path('exports') . '/*', storage_path('imports') . '/*'));
 				
 				echo $path . ' converted' . "\n";
 			});
