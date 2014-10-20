@@ -56,7 +56,7 @@ class ConvertSAPToBridge extends Command {
 		
 		foreach($list as $path)
 		{
-			if(!preg_match('/payment/i', $path) || (File::extension($path) !== 'xls' && File::extension($path) !== 'xlsx')){
+			if(File::extension($path) !== 'xls' && File::extension($path) !== 'xlsx'){
 				continue;
 			}
 			
@@ -68,7 +68,7 @@ class ConvertSAPToBridge extends Command {
 
 				foreach($result[0] as $sheet_line){
 
-					if(strtolower(trim($sheet_line[11])) !== 'success'){
+					if(strtolower(trim($sheet_line[12])) !== 'success'){
 						continue;
 					}
 					$data[] = $sheet_line;
@@ -80,8 +80,8 @@ class ConvertSAPToBridge extends Command {
 					$line_data = array(
 						600,
 						- $item[6] * 100, // Amount
-						method_exists($item[9], 'format') ? $item[9]->format('Ymd') : date('Ymd',strtotime($item[9])),
-						null,
+						method_exists($item[10], 'format') ? $item[10]->format('Ymd') : date('Ymd',strtotime($item[10])),
+						$item[8] === 'D' ? null : ($item[8] === 'E' ? 'ICBC-corporate' : 'ICBC'),
 						null,
 						$item[7], // Document No.
 						$item[4], // Report ID
@@ -94,7 +94,7 @@ class ConvertSAPToBridge extends Command {
 					);
 					$output .= implode(',', $line_data) . "\n";
 					
-					$last_item_date = method_exists($item[9], 'format') ? $item[9]->format('Ymd') : date('Ymd',strtotime($item[9]));
+					$last_item_date = method_exists($item[10], 'format') ? $item[10]->format('Ymd') : date('Ymd',strtotime($item[10]));
 					
 				}
 
