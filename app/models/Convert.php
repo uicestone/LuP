@@ -11,13 +11,13 @@ class Convert {
 				break;
 			}
 		}
-		$mapping = DB::table('cgcsl_vendor_mapping')->where('vendor_code_new', $vendor_code)->first();
+		$mapping = DB::table('vendor_mapping')->where('vendor_code_new', $vendor_code)->first();
 		return $mapping ? $mapping->chinese_name : 'N/A';
 	}
 
 	protected static function getOldVendor($new_vendor)
 	{
-		$mapping = DB::table('cgcsl_vendor_mapping')->where('vendor_code_new', $new_vendor)->first();
+		$mapping = DB::table('vendor_mapping')->where('vendor_code_new', $new_vendor)->first();
 		return $mapping ? $mapping->vendor_code_old : $new_vendor;
 	}
 	
