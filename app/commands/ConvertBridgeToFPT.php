@@ -38,7 +38,7 @@ class ConvertBridgeToFPT extends Command {
 	public function fire()
 	{
 		$start = microtime(true);
-		$this->info(Date('Y-m-d H:i:s', $start) . ' start to convert ');// . $this->option('path'));
+		$this->info(Date('Y-m-d H:i:s', $start) . ' start to convert ' . $this->option('path'));
 
 		$config = array(
 			'host'=>$this->option('host'),
