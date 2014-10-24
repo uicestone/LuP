@@ -65,7 +65,7 @@ class LoadWbs extends Command {
 	protected function getOptions()
 	{
 		return array(
-			array('sheet-name', 'n', InputOption::VALUE_REQUIRED, 'WBS sheet name in the Excel book.')
+			array('sheet-name', null, InputOption::VALUE_REQUIRED, 'WBS sheet name in the Excel book.')
 		);
 	}
 
