@@ -124,10 +124,10 @@ class ConvertBridgeToFPT extends Command {
 	protected function getOptions()
 	{
 		return array(
-//			array('host', 's', InputOption::VALUE_REQUIRED, 'ftp server host'),
-//			array('login', 'u', InputOption::VALUE_REQUIRED, 'username of ftp account'),
-//			array('pass', 'p', InputOption::VALUE_REQUIRED, 'password of ftp account'),
-//			array('path', 'd', InputOption::VALUE_REQUIRED, 'path to source txt file'),
+			array('host', 's', InputOption::VALUE_REQUIRED, 'ftp server host'),
+			array('login', 'u', InputOption::VALUE_REQUIRED, 'username of ftp account'),
+			array('pass', 'p', InputOption::VALUE_REQUIRED, 'password of ftp account'),
+			array('path', 'd', InputOption::VALUE_REQUIRED, 'path to source txt file'),
 			array('map-wbs', 'w', InputOption::VALUE_NONE, 'whether to map Cost Center to WBS Cost Center'),
 		);
 	}
