@@ -18,7 +18,7 @@ class ConvertBridgeToFPT extends Command {
 	 *
 	 * @var string
 	 */
-	protected $description = '';
+	protected $description = 'Read and convert Concur outbound file, store into local folder.';
 
 	/**
 	 * Create a new command instance.
@@ -38,8 +38,8 @@ class ConvertBridgeToFPT extends Command {
 	public function fire()
 	{
 		$start = microtime(true);
-		echo 'Convertion started at ' . Date('Y-m-d H:i:s', $start) . '.' . "\n";
-		
+		$this->info(Date('Y-m-d H:i:s', $start) . ' start to convert ');// . $this->option('path'));
+
 		$config = array(
 			'host'=>$this->option('host'),
 			'username'=>$this->option('login'),
@@ -52,7 +52,7 @@ class ConvertBridgeToFPT extends Command {
 		ftp_login($conn, $config['username'], $config['password']);
 		ftp_pasv($conn, true);
 		$list = ftp_nlist($conn, $config['path']);
-//		$list = array('./SAE_ACCOUNT_CG_20140912.txt');
+//		$list = File::files(storage_path('imports'));
 		
 		foreach($list as $file)
 		{
@@ -71,6 +71,18 @@ class ConvertBridgeToFPT extends Command {
 			
 			array_walk($data, function(&$line){
 				$line = preg_split('/\|+/', $line);
+				
+				!empty($line[8]) && $line[8] = trim($line[8]);
+				
+				if($this->option('map-wbs') && !empty($line[8])){
+					$wbs = Wbs::where('code', $line[8])->where('closed_or_not', 'Open')->first();
+					
+					if($wbs){
+						$line[7] = $wbs->project_costcenter;
+					}else{
+						$line[8] .= ' [Cost Center not found for this WBS]';
+					}
+				}
 			});
 			
 			$stored_file = Excel::create(preg_replace('/^.*\/|\.txt$/i', '', $file), function($excel) use($data){
@@ -79,7 +91,7 @@ class ConvertBridgeToFPT extends Command {
 				});
 			})->store('xlsx', false, true);
 			
-			echo $stored_file['file'] . ' converted' . "\n";
+			$this->info(date('Y-m-d H:i:s') . ' ' . $stored_file['file'] . ' converted');
 			
 //			ftp_pasv($conn, true);
 //			ftp_put($conn, $config['path'] . '/' . $stored_file['file'], $stored_file['full'], FTP_BINARY) || exit('error putting file through ftp.');
@@ -88,7 +100,7 @@ class ConvertBridgeToFPT extends Command {
 			
 		}
 		
-		echo 'Completed. Convertion took ' . (microtime(true) - $start) . ' seconds.' . "\n";
+		$this->info(date('Y-m-d H:i:s') . ' completed (in ' . round(microtime(true) - $start, 3) . 's)');
 		
 	}
 
@@ -112,10 +124,11 @@ class ConvertBridgeToFPT extends Command {
 	protected function getOptions()
 	{
 		return array(
-			array('host', 's', InputOption::VALUE_REQUIRED, 'ftp server host'),
-			array('login', 'u', InputOption::VALUE_REQUIRED, 'username of ftp account'),
-			array('pass', 'p', InputOption::VALUE_REQUIRED, 'password of ftp account'),
-			array('path', 'd', InputOption::VALUE_REQUIRED, 'path to source txt file'),
+//			array('host', 's', InputOption::VALUE_REQUIRED, 'ftp server host'),
+//			array('login', 'u', InputOption::VALUE_REQUIRED, 'username of ftp account'),
+//			array('pass', 'p', InputOption::VALUE_REQUIRED, 'password of ftp account'),
+//			array('path', 'd', InputOption::VALUE_REQUIRED, 'path to source txt file'),
+			array('map-wbs', 'w', InputOption::VALUE_NONE, 'whether to map Cost Center to WBS Cost Center'),
 		);
 	}
 
