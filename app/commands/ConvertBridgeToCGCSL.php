@@ -18,7 +18,7 @@ class ConvertBridgeToCGCSL extends Command {
 	 *
 	 * @var string
 	 */
-	protected $description = 'Command description.';
+	protected $description = 'Read and convert Concur outbound file, store into local folder.';
 
 	/**
 	 * Create a new command instance.

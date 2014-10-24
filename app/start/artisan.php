@@ -14,3 +14,4 @@
 Artisan::add(new ConvertBridgeToCGCSL);
 Artisan::add(new ConvertBridgeToFPT);
 Artisan::add(new ConvertSAPToBridge);
+Artisan::add(new LoadWbs);

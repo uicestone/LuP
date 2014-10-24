@@ -18,7 +18,7 @@ class ConvertSAPToBridge extends Command {
 	 *
 	 * @var string
 	 */
-	protected $description = '';
+	protected $description = 'Read local stored payment confirmation file, convert and write to Concur inbound.';
 
 	/**
 	 * Create a new command instance.
