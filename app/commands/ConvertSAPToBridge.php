@@ -79,7 +79,7 @@ class ConvertSAPToBridge extends Command {
 				foreach($data as $item){
 					$line_data = array(
 						600,
-						- $item[6] * 100, // Amount
+						$item[6] > 0 ? - $item[6] * 100 : $item[6] * 100, // Amount
 						method_exists($item[10], 'format') ? $item[10]->format('Ymd') : date('Ymd',strtotime($item[10])),
 						$item[8] === 'D' ? null : ($item[8] === 'E' ? 'ICBC-corporate' : 'ICBC'),
 						null,
