@@ -68,7 +68,7 @@ class ConvertSAPToBridge extends Command {
 
 				foreach($result[0] as $sheet_line){
 
-					if(strtolower(trim($sheet_line[12])) !== 'success'){
+					if(strtolower(trim($sheet_line[12])) !== 'success' && $item[4]){
 						continue;
 					}
 					$data[] = $sheet_line;
