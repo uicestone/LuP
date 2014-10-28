@@ -38,7 +38,7 @@ class ConvertBridgeToCGCSL extends Command {
 	public function fire()
 	{
 		$start = microtime(true);
-		echo 'Convertion started at ' . Date('Y-m-d H:i:s', $start) . '.' . "\n";
+		$this->info(Date('Y-m-d H:i:s', $start) . ' start to convert ' . $this->option('path'));
 		
 		$config = array(
 			'host'=>$this->option('host'),
@@ -75,7 +75,7 @@ class ConvertBridgeToCGCSL extends Command {
 				});
 			})->store('xlsx', false, true);
 			
-			echo $stored_file['file'] . ' converted' . "\n";
+			$this->info(date('Y-m-d H:i:s') . ' ' . $stored_file['file'] . ' converted');
 			
 //			ftp_pasv($conn, true);
 //			ftp_put($conn, $config['path'] . '/' . $stored_file['file'], $stored_file['full'], FTP_BINARY) || exit('error putting file through ftp.');
@@ -84,7 +84,7 @@ class ConvertBridgeToCGCSL extends Command {
 			
 		}
 		
-		echo 'Completed. Convertion took ' . (microtime(true) - $start) . ' seconds.' . "\n";
+		$this->info(date('Y-m-d H:i:s') . ' completed (in ' . round(microtime(true) - $start, 3) . 's)');
 		
 	}
 

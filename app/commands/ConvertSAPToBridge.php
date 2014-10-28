@@ -38,7 +38,7 @@ class ConvertSAPToBridge extends Command {
 	public function fire()
 	{
 		$start = microtime(true);
-		echo 'Convertion started at ' . Date('Y-m-d H:i:s', $start) . '.' . "\n";
+		$this->info(Date('Y-m-d H:i:s', $start) . ' start to convert ' . $this->option('path'));
 		
 		$config = array(
 			'host'=>$this->option('host'),
@@ -105,14 +105,15 @@ class ConvertSAPToBridge extends Command {
 				ftp_pasv($conn, true);
 				ftp_put($conn, $config['path'] . '/' . $export_file_name, storage_path('exports') . '/' . $export_file_name, FTP_BINARY) || exit('error putting file through ftp.');
 				
-				File::delete(array(storage_path('exports') . '/*', storage_path('imports') . '/*'));
+				File::delete($path);
+				File::delete(storage_path('exports') . '/' . $export_file_name);
 				
-				echo $path . ' converted' . "\n";
+				$this->info(date('Y-m-d H:i:s') . ' ' . $path . ' converted');
 			});
 			
 		}
 		
-		echo 'Completed. Convertion took ' . (microtime(true) - $start) . ' seconds.' . "\n";
+		$this->info(date('Y-m-d H:i:s') . ' completed (in ' . round(microtime(true) - $start, 3) . 's)');
 		
 	}
 
