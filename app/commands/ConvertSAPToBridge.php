@@ -38,7 +38,7 @@ class ConvertSAPToBridge extends Command {
 	public function fire()
 	{
 		$start = microtime(true);
-		$this->info(Date('Y-m-d H:i:s', $start) . ' start to convert ' . $this->option('path'));
+		$this->comment(Date('Y-m-d H:i:s', $start) . ' Start to convert.');
 		
 		$config = array(
 			'host'=>$this->option('host'),
@@ -47,10 +47,7 @@ class ConvertSAPToBridge extends Command {
 			'path'=>$this->option('path')
 		);
 		
-		$conn = ftp_connect($config['host']);
-
-		ftp_pasv($conn, true);
-		ftp_login($conn, $config['username'], $config['password']);
+		$conn = null;
 		
 		$list = File::files(storage_path('imports'));
 		
@@ -60,7 +57,7 @@ class ConvertSAPToBridge extends Command {
 				continue;
 			}
 			
-			Excel::load($path, function($reader) use($conn, $config, $path)
+			Excel::load($path, function($reader) use($config, $path)
 			{
 				$result = $reader->noHeading()->toArray();
 
@@ -98,17 +95,35 @@ class ConvertSAPToBridge extends Command {
 					
 				}
 
-				$export_file_name = '/PYMT_CONFIRM_' . $last_item_date . '.txt';
+				$export_file_name = 'PYMT_CONFIRM_' . $last_item_date . '.txt';
 				
 				file_put_contents(storage_path('exports') . '/' . $export_file_name, $output);
-
-				ftp_pasv($conn, true);
-				ftp_put($conn, $config['path'] . '/' . $export_file_name, storage_path('exports') . '/' . $export_file_name, FTP_BINARY) || exit('error putting file through ftp.');
+				
+				$this->comment(date('Y-m-d H:i:s') . ' ' . $export_file_name . ' converted, uploading to FTP server...');
+				
+				global $conn;
+				
+				if(empty($conn)){
+					$this->comment(Date('Y-m-d H:i:s') . ' Logging FTP...');
+					$conn = ftp_connect($config['host']);
+					ftp_pasv($conn, true);
+					ftp_login($conn, $config['username'], $config['password']);
+					$this->info(Date('Y-m-d H:i:s') . ' Logged into FTP server.');
+				}
+				
+				while(!@ftp_pasv($conn, true)){
+					$this->error('Failed to switch to passive mode. Trying again...');
+				}
+				
+				while(!@ftp_put($conn, $config['path'] . '/' . $export_file_name, storage_path('exports') . '/' . $export_file_name, FTP_BINARY)){
+					$this->error('Failed to write to FTP server. Trying again...');
+				}
 				
 				File::delete($path);
 				File::delete(storage_path('exports') . '/' . $export_file_name);
 				
-				$this->info(date('Y-m-d H:i:s') . ' ' . $path . ' converted');
+				$this->info(date('Y-m-d H:i:s') . ' ' . $export_file_name . ' uploaded to FTP server.');
+				
 			});
 			
 		}
