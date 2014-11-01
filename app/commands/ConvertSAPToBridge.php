@@ -19,6 +19,12 @@ class ConvertSAPToBridge extends Command {
 	 * @var string
 	 */
 	protected $description = 'Read local stored payment confirmation file, convert and write to Concur inbound.';
+	
+	/**
+	 * The FTP connection to use, will be lazy loaded and only for once.
+	 * @var Resource
+	 */
+	protected $ftp_connection;
 
 	/**
 	 * Create a new command instance.
@@ -46,8 +52,6 @@ class ConvertSAPToBridge extends Command {
 			'password'=>$this->option('pass'),
 			'path'=>$this->option('path')
 		);
-		
-		$conn = null;
 		
 		$list = File::files(storage_path('imports'));
 		
@@ -101,21 +105,19 @@ class ConvertSAPToBridge extends Command {
 				
 				$this->comment(date('Y-m-d H:i:s') . ' ' . $export_file_name . ' converted, uploading to FTP server...');
 				
-				global $conn;
-				
-				if(empty($conn)){
+				if(empty($this->ftp_connection)){
 					$this->comment(Date('Y-m-d H:i:s') . ' Logging FTP...');
-					$conn = ftp_connect($config['host']);
-					ftp_pasv($conn, true);
-					ftp_login($conn, $config['username'], $config['password']);
+					$this->ftp_connection = ftp_connect($config['host'], 21);
+					ftp_pasv($this->ftp_connection, true);
+					ftp_login($this->ftp_connection, $config['username'], $config['password']);
 					$this->info(Date('Y-m-d H:i:s') . ' Logged into FTP server.');
 				}
 				
-				while(!@ftp_pasv($conn, true)){
+				while(!@ftp_pasv($this->ftp_connection, true)){
 					$this->error('Failed to switch to passive mode. Trying again...');
 				}
 				
-				while(!@ftp_put($conn, $config['path'] . '/' . $export_file_name, storage_path('exports') . '/' . $export_file_name, FTP_BINARY)){
+				while(!@ftp_put($this->ftp_connection, $config['path'] . '/' . $export_file_name, storage_path('exports') . '/' . $export_file_name, FTP_BINARY)){
 					$this->error('Failed to write to FTP server. Trying again...');
 				}
 				
@@ -128,7 +130,7 @@ class ConvertSAPToBridge extends Command {
 			
 		}
 		
-		$this->info(date('Y-m-d H:i:s') . ' completed (in ' . round(microtime(true) - $start, 3) . 's)');
+		$this->info(date('Y-m-d H:i:s') . ' Completed. (in ' . round(microtime(true) - $start, 3) . 's)');
 		
 	}
 

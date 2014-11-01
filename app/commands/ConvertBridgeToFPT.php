@@ -21,6 +21,12 @@ class ConvertBridgeToFPT extends Command {
 	protected $description = 'Read and convert Concur outbound file, store into local folder.';
 
 	/**
+	 * The FTP connection to use, will be lazy loaded and only for once.
+	 * @var Resource
+	 */
+	protected $ftp_connection;
+	
+	/**
 	 * Create a new command instance.
 	 *
 	 * @return void
@@ -38,7 +44,7 @@ class ConvertBridgeToFPT extends Command {
 	public function fire()
 	{
 		$start = microtime(true);
-		$this->info(Date('Y-m-d H:i:s', $start) . ' start to convert ' . $this->option('path'));
+		$this->info(Date('Y-m-d H:i:s', $start) . ' Start to convert.');
 
 		$config = array(
 			'host'=>$this->option('host'),
@@ -47,25 +53,31 @@ class ConvertBridgeToFPT extends Command {
 			'path'=>$this->option('path')
 		);
 		
-		$conn = ftp_connect($config['host']);
-		ftp_pasv($conn, true);
-		ftp_login($conn, $config['username'], $config['password']);
-		ftp_pasv($conn, true);
-		$list = ftp_nlist($conn, $config['path']);
-//		$list = File::files(storage_path('imports'));
+		$this->comment(date('Y-m-d H:i:s') . ' Logging FTP...');
+		$this->ftp_connection = ftp_connect($config['host'], 21);
+		ftp_pasv($this->ftp_connection, true);
+		ftp_login($this->ftp_connection, $config['username'], $config['password']);
+		$this->info(date('Y-m-d H:i:s') . ' Logged into FTP server.');
 		
-		foreach($list as $file)
+		ftp_pasv($this->ftp_connection, true);
+		$list = ftp_nlist($this->ftp_connection, $config['path']);
+		$this->comment(date('Y-m-d H:i:s') . ' ' . count($list) . ' files on FTP listed.');
+		
+		foreach($list as $path)
 		{
-			if(!preg_match('/.txt$/i', $file)){
-				continue;
-			}
-			ob_start();
-			ftp_pasv($conn, true);
-			ftp_get($conn, "php://output", $file, FTP_BINARY) || exit('error getting file through ftp.');
-			$file_content = ob_get_contents();
-			ob_end_clean();			
+			$filename = basename($path);
 			
-//			$file_content = file_get_contents($file);
+			while(!@ftp_pasv($this->ftp_connection, true)){
+				$this->error('Failed to switch to passive mode. Trying again...');
+			}
+
+			while(!@ftp_get($this->ftp_connection, storage_path('imports') . '/' . $filename , $path, FTP_BINARY)){
+				$this->error('Failed to read from FTP server. Trying again... (' . $path . ')');
+			}
+			
+			$this->comment(date('Y-m-d H:i:s') . ' ' . $filename . ' downloaded.');
+			
+			$file_content = File::get(storage_path('imports') . '/' . $filename);
 			
 			$data = preg_split('/[\r\n]+/', $file_content);
 			
@@ -85,7 +97,7 @@ class ConvertBridgeToFPT extends Command {
 				}
 			});
 			
-			$stored_file = Excel::create(preg_replace('/^.*\/|\.txt$/i', '', $file), function($excel) use($data){
+			$stored_file = Excel::create(preg_replace('/^.*\/|\.txt$/i', '', $path), function($excel) use($data){
 				$excel->sheet('Sheet1', function($sheet) use($data){
 					$sheet->fromArray($data, null, 'A1', false, false);
 				});
@@ -93,10 +105,7 @@ class ConvertBridgeToFPT extends Command {
 			
 			$this->info(date('Y-m-d H:i:s') . ' ' . $stored_file['file'] . ' converted');
 			
-//			ftp_pasv($conn, true);
-//			ftp_put($conn, $config['path'] . '/' . $stored_file['file'], $stored_file['full'], FTP_BINARY) || exit('error putting file through ftp.');
-			
-//			unlink($stored_file['full']);
+			File::delete(storage_path('imports') . '/' . $filename);
 			
 		}
 		
