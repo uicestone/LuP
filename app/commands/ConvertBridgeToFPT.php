@@ -87,13 +87,28 @@ class ConvertBridgeToFPT extends Command {
 				!empty($line[8]) && $line[8] = trim($line[8]);
 				
 				if($this->option('map-wbs') && !empty($line[8])){
-					$wbs = Wbs::where('code', $line[8])->where('closed_or_not', 'Open')->first();
+					$wbs_keywords = array($line[8]);
 					
-					if($wbs){
-						$line[7] = $wbs->project_costcenter;
-					}else{
-						$line[8] .= ' [Cost Center not found for this WBS]';
+					$matches = array();
+					preg_match_all('/\d{7}/', $line[8], $matches);
+					
+					$matches && $wbs_keywords[] = $matches[0][0];
+					
+					$fail = true;
+
+					foreach($wbs_keywords as $keyword){
+						$wbs = Wbs::where('code', $keyword)->where('closed_or_not', 'Open')->first();
+						
+						if($wbs){
+							$line[7] = $wbs->project_costcenter;
+							$line[8] = $keyword . '_TRAV_COST';
+							$fail = false;
+							break;
+						}
+						
 					}
+					
+					$fail && $line[8] .= ' [Cost Center not found for this WBS]';
 				}
 			});
 			
