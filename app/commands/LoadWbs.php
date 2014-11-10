@@ -38,6 +38,13 @@ class LoadWbs extends Command {
 	public function fire()
 	{
 		$reader = Excel::selectSheets($this->option('sheet-name'))->load($this->argument('path'));
+		
+		$data = $reader->toArray();
+		
+		if(!$data){
+			throw new Exception('Cannot read data from ' . $this->argument('path') . '.');
+		}
+		
 		DB::table('wbs')->truncate();
 		foreach($reader->toArray() as $row){
 			$row['code'] = $row['wbs'];
