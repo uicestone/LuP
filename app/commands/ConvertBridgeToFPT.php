@@ -90,9 +90,8 @@ class ConvertBridgeToFPT extends Command {
 					$wbs_keywords = array($line[8]);
 					
 					$matches = array();
-					preg_match_all('/\d{7}/', $line[8], $matches);
-					
-					$matches && $wbs_keywords[] = $matches[0][0];
+					preg_match_all('/[\d\w]{7}/', $line[8], $matches);
+					isset($matches[0][0]) && $wbs_keywords[] = $matches[0][0];
 					
 					$fail = true;
 
