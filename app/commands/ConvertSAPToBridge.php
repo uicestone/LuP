@@ -113,12 +113,12 @@ class ConvertSAPToBridge extends Command {
 					$this->info(Date('Y-m-d H:i:s') . ' Logged into FTP server.');
 				}
 				
-				while(!@ftp_pasv($this->ftp_connection, true)){
-					$this->error('Failed to switch to passive mode. Trying again...');
+				for($i = 0; $i < 20 && !@ftp_pasv($this->ftp_connection, true); $i ++){
+					$this->error(Date('Y-m-d H:i:s') . ' Failed to switch to passive mode. ' . ($i === 19 ? 'Aborting.' : 'Trying again...'));
 				}
 				
-				while(!@ftp_put($this->ftp_connection, $config['path'] . '/' . $export_file_name, storage_path('exports') . '/' . $export_file_name, FTP_BINARY)){
-					$this->error('Failed to write to FTP server. Trying again...');
+				for($i = 0; $i < 20 && !@ftp_put($this->ftp_connection, $config['path'] . '/' . $export_file_name, storage_path('exports') . '/' . $export_file_name, FTP_BINARY); $i ++){
+					$this->error(Date('Y-m-d H:i:s') . ' Failed to write to FTP server. ' . ($i === 19 ? 'Aborting.' : 'Trying again...'));
 				}
 				
 				File::delete($path);

@@ -72,12 +72,12 @@ class ConvertBridgeToCGCSL extends Command {
 				continue;
 			}
 			
-			while(!@ftp_pasv($this->ftp_connection, true)){
-				$this->error('Failed to switch to passive mode. Trying again...');
+			for($i = 0; $i < 20 && !@ftp_pasv($this->ftp_connection, true); $i ++){
+				$this->error(Date('Y-m-d H:i:s') . ' Failed to switch to passive mode. ' . ($i === 19 ? 'Aborting.' : 'Trying again...'));
 			}
 
-			while(!@ftp_get($this->ftp_connection, storage_path('imports') . '/' . $filename , $path, FTP_BINARY)){
-				$this->error('Failed to read from FTP server. Trying again... (' . $path . ')');
+			for($i = 0; $i < 20 && !@ftp_get($this->ftp_connection, storage_path('imports') . '/' . $filename , $path, FTP_BINARY); $i ++){
+				$this->error(Date('Y-m-d H:i:s') . ' Failed to read from FTP server. ' . ($i === 19 ? 'Aborting.' : 'Trying again...'));
 			}
 			
 			$this->comment(date('Y-m-d H:i:s') . ' ' . $filename . ' downloaded.');
