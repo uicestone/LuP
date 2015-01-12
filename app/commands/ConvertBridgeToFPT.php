@@ -79,41 +79,31 @@ class ConvertBridgeToFPT extends Command {
 			
 			$file_content = File::get(storage_path('imports') . '/' . $filename);
 			
-			$data = preg_split('/[\r\n]+/', $file_content);
+			$data = Convert::concurBridgeToFPT($file_content);
 			
-			array_walk($data, function(&$line){
-				$line = preg_split('/\|+/', $line);
+			array_walk($data, function(&$line)
+			{
+				!empty($line['WBS']) && $line['WBS'] = trim($line['WBS']);
 				
-				!empty($line[8]) && $line[8] = trim($line[8]);
-				
-				if($this->option('map-wbs') && !empty($line[8])){
-					$wbs_keywords = array($line[8]);
+				if($this->option('map-wbs') && !empty($line['WBS']))
+				{
+					$wbs = Wbs::getByKeyword($line['WBS']);
 					
-					$matches = array();
-					preg_match_all('/[\d\w]{7}/', $line[8], $matches);
-					isset($matches[0][0]) && $wbs_keywords[] = $matches[0][0];
-					
-					$fail = true;
-
-					foreach($wbs_keywords as $keyword){
-						$wbs = Wbs::where('code', $keyword)->where('closed_or_not', 'Open')->first();
-						
-						if($wbs){
-							$line[7] = $wbs->project_costcenter;
-							$line[8] = $keyword . '_TRAV_COST';
-							$fail = false;
-							break;
-						}
-						
+					if($wbs)
+					{
+						$line['Cost Center'] = $wbs->project_costcenter;
+						$line['WBS'] = $wbs->code . '_TRAV_COST';
 					}
-					
-					$fail && $line[8] .= ' [Cost Center not found for this WBS]';
+					else
+					{
+						$line['WBS'] .= ' [Cost Center not found for this WBS]';
+					}
 				}
 			});
 			
-			$stored_file = Excel::create(preg_replace('/^.*\/|\.txt$/i', '', $path), function($excel) use($data){
+			$stored_file = Excel::create(preg_replace('/^.*\/|\.txt$/i', '', $path) . '-T2', function($excel) use($data){
 				$excel->sheet('Sheet1', function($sheet) use($data){
-					$sheet->fromArray($data, null, 'A1', false, false);
+					$sheet->fromArray($data);
 				});
 			})->store('xlsx', false, true);
 			

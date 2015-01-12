@@ -96,4 +96,77 @@ class Convert {
 		
 	}
 	
+	public static function concurBridgeToFPT($input_text)
+	{
+		$lines = preg_split('/\n/', $input_text);
+		
+		array_walk($lines, function(&$line)
+		{
+			$line = explode('|', $line);
+		});
+		
+		$items = array();
+		
+		foreach($lines as $line)
+		{
+			if($line[0] === 'H'){
+				$items[$line[1]] = array('head'=>$line);
+			}
+			elseif($line[0] === 'D'){
+				$items[$line[1]]['body'][] = $line;
+			}
+		}
+		
+		$output = array();
+		
+		$trasaction_no = 1;
+		$document_line_item_no = 1;
+		
+		foreach($items as $item)
+		{
+			foreach($item['body'] as $index => $record)
+			{
+				$output[] = array(
+					'Transaction NO.' => $record[1], // Transaction number
+					'Company code' => $item['head'][2], // Company code
+					'Document Type' => 'KR',
+					'Document Date' => date('Ymd', strtotime($item['head'][3])), // Document Date
+					'Posting Date' => date('Ymd', strtotime($item['head'][4])), // Posting Date
+					'Currency' => $item['head'][5],
+					'Reference' => $item['head'][6],
+					'Doc.Header text' => $item['head'][7], // Header Text
+					'Posting Key' => $record[2], // Posting Key
+					'Vendor' => $record[3], // Vendor
+					'G/L Account' => $record[4], // G/L Account,
+					'Amount' => $record[5],  // Amount
+					'reference key 3' => $record[6],
+					'Tax Code' => $record[7], // Tax code
+					'Assignment ' => $record[12], // EPS
+					'Text' => $record[9], // Comments
+					'Cost Center' => $record[10], // Cost Center
+					'WBS' => $record[11],
+					'Partner bank type' => null,
+					'Sepcial G/L Indicator' => null,
+//					'Year' => date('Y', strtotime($item['head'][4])),
+//					'Period' => date('m', strtotime($item['head'][4])),
+//					'Reference' => self::getReference($item), // Partner bank type
+//					'Document Line item no.' => $document_line_item_no,
+//					'Customer' => null,
+//					'Sp.GL Indicator' => trim($record[13]), // Sepcial G/L Indicator
+//					'Profir Center' => null,
+//					'Base line date' => date('d.m.Y', strtotime($item['head'][4])), // Same as posting date
+				);
+				
+				$document_line_item_no ++;
+				
+			}
+			
+			$trasaction_no ++;
+			
+		}
+		
+		return $output;
+		
+	}
+	
 }
