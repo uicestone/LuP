@@ -40,7 +40,7 @@ class Convert {
 	{
 		$result = DB::table('accounting_code_mapping')->where('CGCSL Account', $old_code)->first();
 		
-		return $result ? $result->{'CAPIC account'} : null;
+		return $result ? $result->{'CG NSC-ERP'} : null;
 	}
 
 	public static function concurBridgeToCGCSL($input_text)
