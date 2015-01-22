@@ -2,7 +2,7 @@
 
 class Convert {
 	
-	protected static function getVendorName($item)
+	public static function getVendorName($item)
 	{
 		$vendor_code = null;
 		foreach($item['body'] as $record){
@@ -15,18 +15,32 @@ class Convert {
 		return $mapping ? $mapping->chinese_name : 'N/A';
 	}
 
-	protected static function getOldVendor($new_vendor)
+	public static function getNewVendor($old_vendor)
 	{
-		$mapping = DB::table('vendor_mapping')->where('vendor_code_new', $new_vendor)->first();
-		return $mapping ? $mapping->vendor_code_old : $new_vendor;
+		$mapping = DB::table('vendor_mapping')->where('vendor_code_old', $old_vendor)->first();
+		return $mapping ? $mapping->vendor_code_new : $old_vendor;
 	}
 	
-	protected static function getReference($item){
+	public static function getNewCostCenter($old_cost_center)
+	{
+		$mapping = DB::table('cost_center_mapping')->where('SWT_Cost_Center', $old_cost_center)->first();
+		return $mapping ? $mapping->{'NSC_ERP_Cost_Center'} : $old_cost_center;
+	}
+	
+	public static function getReference($item)
+	{
 		foreach($item['body'] as $record){
 			if($record[12]){
 				return $record['12'];
 			}
 		}
+	}
+	
+	public static function getNewAccountCode($old_code)
+	{
+		$result = DB::table('accounting_code_mapping')->where('CGCSL Account', $old_code)->first();
+		
+		return $result ? $result->{'CAPIC account'} : null;
 	}
 
 	public static function concurBridgeToCGCSL($input_text)
@@ -70,14 +84,14 @@ class Convert {
 					'Document Type' => 'KR',
 					'Reference' => self::getReference($item), // Partner bank type
 					'Document Line item no.' => $document_line_item_no,
-					'G/L Account' => $record[4], // G/L Account,
+					'G/L Account' => strlen($record[4]) === 6 ? self::getNewAccountCode($record[4]) : $record[4], // G/L Account,
 					'Customer' => null,
-					'Vendor' => $record[3] ? self::getOldVendor($record[3]) : null, // Vendor
+					'Vendor' => $record[3], // Vendor
 					'Sp.GL Indicator' => trim($record[13]), // Sepcial G/L Indicator
 					'Text' => $record[3] ? $item['head'][6] : ($record[9] . '/' . self::getVendorName($item)), // Comments
 					'Assignment ' => $record[11], // EPS
 					'Tax code' => $record[7], // Tax code
-					'Cost Center' => $record[10], // Cost Center
+					'Cost Center' => strlen($record[10]) === 8 ? self::getNewCostCenter($record[10]) : $record[10], // Cost Center
 					'Profir Center' => null,
 					'Base line date' => date('d.m.Y', strtotime($item['head'][4])), // Same as posting date
 					'Currency' => 'RMB', // Currency
