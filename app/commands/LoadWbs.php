@@ -47,6 +47,9 @@ class LoadWbs extends Command {
 		
 		DB::table('wbs')->truncate();
 		foreach($reader->toArray() as $row){
+			if(!$row['wbs']){
+				continue;
+			}
 			$row['code'] = $row['wbs'];
 			Wbs::create($row);
 		}
