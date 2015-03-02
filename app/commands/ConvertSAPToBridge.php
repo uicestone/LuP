@@ -101,8 +101,14 @@ class ConvertSAPToBridge extends Command {
 						$output .= implode(',', $line_data) . "\n";
 
 					}
-
-					$export_file_name = 'PYMT_CONFIRM_' . basename($path, 'xlsx') . '.txt';
+					
+					preg_match('/\d{8}/', $path, $matches);
+					
+					if(!$matches){
+						throw new Exception('date not found in ' . $path);
+					}
+					
+					$export_file_name = 'PYMT_CONFIRM_' . $matches[0] . '.txt';
 
 					file_put_contents(storage_path('exports') . '/' . $export_file_name, $output);
 
