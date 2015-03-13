@@ -67,6 +67,9 @@ class ConvertSAPToBridge extends Command {
 
 				Excel::selectSheetsByIndex(0)->load($path, function($reader) use($config, $path)
 				{
+					
+					$reader->formatDates(false);
+					
 					$result = $reader->noHeading()->toArray();
 
 					$data = array();
@@ -86,8 +89,8 @@ class ConvertSAPToBridge extends Command {
 						$line_data = array(
 							600,
 							$item[5] > 0 ? - round($item[5] * 100) : round($item[5] * 100), // Amount
-							method_exists($item[8], 'format') ? $item[8]->format('Ymd') : date('Ymd',strtotime(str_replace('.', '/', $item[8]))),
-							$item[7] === 'D' ? null : ($item[8] === 'E' ? 'ICBC-corporate' : 'ICBC'),
+							date('Ymd',strtotime(str_replace('.', '/', $item[8]))),
+							$item[7] === 'D' ? null : ($item[7] === 'E' ? 'ICBC-corporate' : 'ICBC'),
 							null,
 							$item[6], // Document No.
 							$item[3], // Report ID
