@@ -73,7 +73,7 @@ class ConvertSAPToBridge extends Command {
 
 					foreach($result as $sheet_line){
 						
-						if(strtolower(trim($sheet_line[12])) !== 'success' || !$sheet_line[4]){
+						if(strtolower(trim($sheet_line[11])) !== 'success' || !$sheet_line[3]){
 							continue;
 						}
 						$data[] = $sheet_line;
@@ -85,13 +85,13 @@ class ConvertSAPToBridge extends Command {
 						
 						$line_data = array(
 							600,
-							$item[6] > 0 ? - round($item[6] * 100) : round($item[6] * 100), // Amount
-							method_exists($item[9], 'format') ? $item[9]->format('Ymd') : date('Ymd',strtotime(str_replace('.', '/', $item[9]))),
-							$item[8] === 'D' ? null : ($item[8] === 'E' ? 'ICBC-corporate' : 'ICBC'),
+							$item[5] > 0 ? - round($item[5] * 100) : round($item[5] * 100), // Amount
+							method_exists($item[8], 'format') ? $item[8]->format('Ymd') : date('Ymd',strtotime(str_replace('.', '/', $item[8]))),
+							$item[7] === 'D' ? null : ($item[8] === 'E' ? 'ICBC-corporate' : 'ICBC'),
 							null,
-							$item[7], // Document No.
-							$item[4], // Report ID
-							$item[5], // Currency
+							$item[6], // Document No.
+							$item[3], // Report ID
+							$item[4], // Currency
 							null,
 							null,
 							null,
