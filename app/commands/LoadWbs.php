@@ -50,7 +50,7 @@ class LoadWbs extends Command {
 			if(!$row['wbs']){
 				continue;
 			}
-			$row['code'] = $row['wbs'];
+			$row['code'] = trim($row['wbs']);
 			Wbs::create($row);
 		}
 	}

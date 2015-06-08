@@ -11,8 +11,12 @@ class Wbs extends Eloquent {
 		
 		$matches = array();
 		preg_match_all('/[\d\w]{7}/', $keyword, $matches);
-		isset($matches[0][0]) && $wbs_keywords[] = $matches[0][0];
-
+		
+		foreach($matches[0] as $match)
+		{
+			$wbs_keywords[] = $match;
+		}
+		
 		foreach($wbs_keywords as $keyword)
 		{
 			$wbs = Wbs::where('code', $keyword)->where('closed_or_not', 'Open')->first();

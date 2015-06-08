@@ -86,14 +86,22 @@ class ConvertSAPToBridge extends Command {
 
 					foreach($data as $index => $item){
 						
+						$timestamp = strtotime(str_replace('-', '/', str_replace('.', '/', $item[8])));
+						
+						if(!$timestamp){
+							$this->error('Error date input: ' . $item[8]);
+						}
+						
+						$report_id = preg_replace('/\*|\s/', '', $item[3]);
+						
 						$line_data = array(
 							600,
 							$item[5] > 0 ? - round($item[5] * 100) : round($item[5] * 100), // Amount
-							date('Ymd',strtotime(str_replace('.', '/', $item[8]))),
+							date('Ymd', $timestamp),
 							$item[7] === 'D' ? null : ($item[7] === 'E' ? 'ICBC-corporate' : 'ICBC'),
 							null,
-							$item[6], // Document No.
-							$item[3], // Report ID
+							json_encode($item[6]) ? json_encode($item[6]) : null, // Document No.
+							$report_id, // Report ID
 							$item[4], // Currency
 							null,
 							null,
@@ -136,7 +144,7 @@ class ConvertSAPToBridge extends Command {
 					File::delete($path);
 					File::delete(storage_path('exports') . '/' . $export_file_name);
 
-					$this->info(date('Y-m-d H:i:s') . ' ' . $export_file_name . ' uploaded to FTP server.');
+					$this->info(date('Y-m-d H:i:s') . ' ' . $export_file_name . ' (' . count($data) . ' lines) uploaded to FTP server.');
 
 				});
 			
