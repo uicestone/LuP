@@ -16,3 +16,4 @@ Artisan::add(new ConvertBridgeToFPT);
 Artisan::add(new ConvertBridgeToFC);
 Artisan::add(new ConvertSAPToBridge);
 Artisan::add(new LoadWbs);
+Artisan::add(new LoadMm);

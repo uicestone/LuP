@@ -12,4 +12,3 @@
 */
 
 Route::get('/', 'TestController@index');
-Route::get('load-mm', 'LoadMmController@index');
