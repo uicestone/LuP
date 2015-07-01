@@ -1,9 +1,9 @@
 <?php
 
-class PostMeta extends Eloquent {
+class UserMeta extends Eloquent {
 	
 	protected $connection = 'apaconnect';
-	protected $table = 'postmeta';
+	protected $table = 'usermeta';
 	protected $fillable = array('meta_key', 'meta_value');
 	public $timestamps = false;
 	
