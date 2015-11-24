@@ -5,10 +5,24 @@ class TestController extends BaseController {
 	function index()
 	{
 		$soi_data = DB::connection('soi')->table('V_ELEAVE_SOI_BASIC_DATA')->get();
-		
-		foreach($soi_data as $soi_row)
+
+		if(Input::get('type') === 'json')
 		{
-			print_r($soi_row);
+			foreach($soi_data as $soi_row)
+			{
+				echo json_encode($soi_row) . "\n";
+			}
+		}
+		elseif(Input::get('type') === 'excel')
+		{
+			Excel::create('SOI Data', function($excel) use($soi_data)
+			{
+				$excel->sheet('SOI Data', function($sheet) use($soi_data)
+				{
+					$sheet->fromArray($soi_data);
+				});
+			}
+			)->export('xlsx');
 		}
 	}
 }
