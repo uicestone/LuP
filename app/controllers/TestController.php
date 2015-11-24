@@ -15,11 +15,18 @@ class TestController extends BaseController {
 		}
 		elseif(Input::get('type') === 'excel')
 		{
-			Excel::create('SOI Data', function($excel) use($soi_data)
+
+			$soi_data_array = array_map(function($line)
 			{
-				$excel->sheet('SOI Data', function($sheet) use($soi_data)
+				return (array) $line;
+			},
+			$soi_data);
+
+			Excel::create('SOI Data', function($excel) use($soi_data_array)
+			{
+				$excel->sheet('SOI Data', function($sheet) use($soi_data_array)
 				{
-					$sheet->fromArray($soi_data);
+					$sheet->fromArray($soi_data_array);
 				});
 			}
 			)->export('xlsx');
