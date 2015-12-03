@@ -1,5 +1,5 @@
 <?php
-	// get json file from folder
+	//get json file from folder
     $file = dirname(__FILE__) . "/employees.json";
 	$json = file_get_contents($file);
 
@@ -7,16 +7,16 @@
     $host = "localhost";
     $username = "root";
     $password = "abcd1234QQ";
-    $dbname = "apacportal";
+    $dbname = "lup";
     $con = mysqli_connect($host, $username, $password, $dbname) or die('Error in Connecting: ' . mysqli_error($con));
 
     // use prepare statement for insert query
-    $st = mysqli_prepare($con, 'INSERT INTO lup.employees20151130(id, `Company Code`, Company, `ID Number`, `Employee Name`, `Last Name`, `First Name`, `User Name`, `E-Mail Address`, `Local Grade`, `Cost Center`, `Direct Manager ID`, `Direct Manager`, `Employee Group`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $st = mysqli_prepare($con, 'INSERT INTO employees20151203(id, `Company Code`, Company, `ID Number`, `Employee Name`, `Last Name`, `First Name`, `User Name`, `E-Mail Address`, `Local Grade`, `Cost Center`, `Direct Manager ID`, `Direct Manager`, `Department Head ID`, `Department Head`, `Department`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 
     // bind variables to insert query params
-    mysqli_stmt_bind_param($st, 'issssssssssiss', $id, $company_code, $company, $id_number, $employee_name, $last_name, $first_name, $logon_id, $email, $local_grade, $cost_center, $manager_id, $manager, $group);
+    mysqli_stmt_bind_param($st, 'issssssssssisiss', $id, $company_code, $company, $id_number, $employee_name, $last_name, $first_name, $logon_id, $email, $local_grade, $cost_center, $manager_id, $manager, $chief_id, $chief, $department);
    
-    // convert json object to php associative array
+    //convert json object to php associative array
     $data = json_decode($json, true);
     //var_dump($data);
     // loop through the array
@@ -35,13 +35,15 @@
         $cost_center = $row['KOSTL'];
         $manager_id = $row['ZZHRMAN_PERNR'];
         $manager = $row['ZZHRMAN_VORNA'] . ' ' . $row['ZZHRMAN_NACHN'];
-        $group = $row['ZZPERSG_TXT'];
+        $department = $row['ZZDEP_OM_TXT'];
+        $chief_id = $row["ZZCHIEF_DEP_PERN"];
+        $chief = $row["ZZCHIEF_DEP_VORN"] . ' ' . $row["ZZCHIEF_DEP_NACH"];
 
         // execute insert query
         mysqli_stmt_execute($st);
     }
     
-    // close connection
+    //close connection
     mysqli_close($con);
 
 ?>
