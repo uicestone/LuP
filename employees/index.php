@@ -5,13 +5,13 @@
 
     // open mysql connection
     $host = "localhost";
-    $username = "root";
-    $password = "abcd1234QQ";
+    $username = "lup";
+    $password = "lup";
     $dbname = "lup";
     $con = mysqli_connect($host, $username, $password, $dbname) or die('Error in Connecting: ' . mysqli_error($con));
 
     // use prepare statement for insert query
-    $st = mysqli_prepare($con, 'INSERT INTO employees20151203(id, `Company Code`, Company, `ID Number`, `Employee Name`, `Last Name`, `First Name`, `User Name`, `E-Mail Address`, `Local Grade`, `Cost Center`, `Direct Manager ID`, `Direct Manager`, `Department Head ID`, `Department Head`, `Department`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $st = mysqli_prepare($con, 'INSERT INTO employees(id, `Company Code`, Company, `ID Number`, `Employee Name`, `Last Name`, `First Name`, `User Name`, `E-Mail Address`, `Local Grade`, `Cost Center`, `Direct Manager ID`, `Direct Manager`, `Department Head ID`, `Department Head`, `Department`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 
     // bind variables to insert query params
     mysqli_stmt_bind_param($st, 'issssssssssisiss', $id, $company_code, $company, $id_number, $employee_name, $last_name, $first_name, $logon_id, $email, $local_grade, $cost_center, $manager_id, $manager, $chief_id, $chief, $department);
