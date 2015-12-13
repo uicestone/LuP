@@ -1,15 +1,15 @@
 <?php
 	//get json file from folder
     $file = dirname(__FILE__) . "/employees.json";
-	$json = file_get_contents($file);
+	  $json = file_get_contents($file);
     $file_old = dirname(__FILE__) . "/employees_old.json";
     $json_old = file_get_contents($file_old);
 
     // open mysql connection
     $host = "localhost";
-    $username = "lup";
-    $password = "lup";
-    $dbname = "lup";
+    $username = "";
+    $password = "";
+    $dbname = "";
     $con = mysqli_connect($host, $username, $password, $dbname) or die('Error in Connecting: ' . mysqli_error($con));
 
     // use prepare statement for insert query
@@ -23,7 +23,10 @@
     //convert json object to php associative array
     $data = json_decode($json, true);
     $data_old = json_decode($json_old, true);
-    $diff = array_diff_assoc_recursive($data, $data_old);
+    $diff = array_diff(array_recursive($data, $data_rt), array_recursive($data_old, $data_old_rt));
+    print_r(array_recursive($data, $data_rt));
+    print_r($diff);
+    // exit;
     //  var_export($diff);
     //var_export($data);
     //var_dump($data);
@@ -49,9 +52,11 @@
         $update_date = $row["ZZUPD_DATE"];
 
         foreach ($diff as $row2) {
-            $update_date2 = $row2["ZZUPD_DATE"];
-            if ($update_date2 == $update_date) {
-                mysqli_stmt_execute($update);
+          // $update_date2 = $row2["ZZUPD_DATE"];
+          //  if ($update_date2 == $update_date) {
+          //      mysqli_stmt_execute($update);
+            if ($row2 == $update_date) {
+              mysqli_stmt_execute($update);
             }
         }
 
@@ -62,6 +67,7 @@
     //close connection
     mysqli_close($con);
 
+/*
 function array_diff_assoc_recursive($array1,$array2){  
     $diffarray=array();  
     foreach ($array1 as $key=>$value){  
@@ -85,4 +91,19 @@ function array_diff_assoc_recursive($array1,$array2){
     }  
     return $diffarray;    
 }  
+*/
+
+function array_recursive($array, &$rt) {
+      if (is_array($array)) {
+          foreach ($array as $v) {
+              if (is_array($v)) {
+                  array_recursive($v, $rt);
+              } else {
+                  $rt[] = $v;
+              }
+          }
+      }
+      return $rt;
+  }
+
 ?>

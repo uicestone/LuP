@@ -10,3 +10,4 @@ Thumbs.db
 /.idea
 /app/config/production
 /employees/employees.json
+/employees/employees_old.json
