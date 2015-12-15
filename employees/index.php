@@ -10,26 +10,29 @@
     $username = "";
     $password = "";
     $dbname = "";
-    $con = mysqli_connect($host, $username, $password, $dbname) or die('Error in Connecting: ' . mysqli_error($con));
+    $con = mysqli_connect($host, $username, $password, $dbname) 
+        or die('Error in Connecting: ' . mysqli_error($con));
 
     // use prepare statement for insert query
-    $st = mysqli_prepare($con, 'INSERT INTO employees(id, `Company Code`, Company, `ID Number`, `Employee Name`, `Last Name`, `First Name`, `User Name`, `E-Mail Address`, `Local Grade`, `Cost Center`, `Direct Manager ID`, `Direct Manager`, `Department Head ID`, `Department Head`, `Department`, `Update Date`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    $update = mysqli_prepare($con, 'INSERT INTO employees_updated(id, `Company Code`, Company, `ID Number`, `Employee Name`, `Last Name`, `First Name`, `User Name`, `E-Mail Address`, `Local Grade`, `Cost Center`, `Direct Manager ID`, `Direct Manager`, `Department Head ID`, `Department Head`, `Department`, `Update Date`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-
+    $st = mysqli_prepare($con, 'INSERT INTO employees(id, `Company Code`, Company, `ID Number`, `Employee Name`, `Last Name`, `First Name`, `User Name`, `E-Mail Address`, `Local Grade`, `Cost Center`, `Direct Manager ID`, `Direct Manager`, `Department Head ID`, `Department Head`, `Department`, `Update Date`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        or die(mysqli_error($con));
+    $update = mysqli_prepare($con, 'INSERT INTO employees_updated(id, `Company Code`, Company, `ID Number`, `Employee Name`, `Last Name`, `First Name`, `User Name`, `E-Mail Address`, `Local Grade`, `Cost Center`, `Direct Manager ID`, `Direct Manager`, `Department Head ID`, `Department Head`, `Department`, `Update Date`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        or die(mysqli_error($con));
+    $wp_users = mysqli_prepare($con, 'INSERT INTO wp_users(ID, user_login, user_email, user_nicename, display_name, company_code, company, id_number, last_name, first_name, logon_id, local_grade, cost_center, direct_manager_id, direct_manager, department_head_id, department_head, department, update_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        or die(mysqli_error($con));
+    
     // bind variables to insert query params
-    mysqli_stmt_bind_param($st, 'issssssssssisisss', $id, $company_code, $company, $id_number, $employee_name, $last_name, $first_name, $logon_id, $email, $local_grade, $cost_center, $manager_id, $manager, $chief_id, $chief, $department, $update_date);
-    mysqli_stmt_bind_param($update, 'issssssssssisisss', $id, $company_code, $company, $id_number, $employee_name, $last_name, $first_name, $logon_id, $email, $local_grade, $cost_center, $manager_id, $manager, $chief_id, $chief, $department, $update_date);
-
+    mysqli_stmt_bind_param($st, 'issssssssisisisss', $id, $company_code, $company, $id_number, $employee_name, $last_name, $first_name, $logon_id, $email, $local_grade, $cost_center, $manager_id, $manager, $chief_id, $chief, $department, $update_date);
+    mysqli_stmt_bind_param($update, 'issssssssisisisss', $id, $company_code, $company, $id_number, $employee_name, $last_name, $first_name, $logon_id, $email, $local_grade, $cost_center, $manager_id, $manager, $chief_id, $chief, $department, $update_date);
+    mysqli_stmt_bind_param($wp_users, 'issssssssssisisisss', $id, $email, $email, $employee_name, $employee_name, $company_code, $company, $id_number, $last_name, $first_name, $logon_id, $local_grade, $cost_center, $manager_id, $manager, $chief_id, $chief, $department, $update_date);
+    
     //convert json object to php associative array
     $data = json_decode($json, true);
     $data_old = json_decode($json_old, true);
     $diff = array_diff(array_recursive($data, $data_rt), array_recursive($data_old, $data_old_rt));
-    print_r(array_recursive($data, $data_rt));
+    
     print_r($diff);
-    // exit;
-    //  var_export($diff);
-    //var_export($data);
-    //var_dump($data);
+
     // loop through the array
     foreach ($data as $row) {
         // get the employee details
@@ -37,18 +40,18 @@
         $company_code = $row['BUKRS'];
         $company = $row['BUTXT'];
         $id_number = $row['ZZPERID'];
-        $employee_name = $row['VORNA'] . ' ' . $row['NACHN'];
-        $last_name = $row['NACHN'];
-        $first_name = $row['VORNA'];
+        $employee_name = ucwords(strtolower($row['VORNA'] . ' ' . $row['NACHN']));
+        $last_name = ucwords(strtolower($row['NACHN']));
+        $first_name = ucwords(strtolower($row['VORNA']));
         $logon_id = $row['ZZUSERID'];
-        $email = $row['ZZMAIL'];
+        $email = strtolower($row['ZZMAIL']);
         $local_grade = $row['ZZLCGDE'];
         $cost_center = $row['KOSTL'];
         $manager_id = $row['ZZHRMAN_PERNR'];
-        $manager = $row['ZZHRMAN_VORNA'] . ' ' . $row['ZZHRMAN_NACHN'];
+        $manager = ucwords(strtolower($row['ZZHRMAN_VORNA'] . ' ' . $row['ZZHRMAN_NACHN']));
         $department = $row['ZZDEP_OM_TXT'];
         $chief_id = $row["ZZCHIEF_DEP_PERN"];
-        $chief = $row["ZZCHIEF_DEP_VORN"] . ' ' . $row["ZZCHIEF_DEP_NACH"];
+        $chief = ucwords(strtolower($row["ZZCHIEF_DEP_VORN"] . ' ' . $row["ZZCHIEF_DEP_NACH"]));
         $update_date = $row["ZZUPD_DATE"];
 
         foreach ($diff as $row2) {
@@ -56,10 +59,10 @@
           //  if ($update_date2 == $update_date) {
           //      mysqli_stmt_execute($update);
             if ($row2 == $update_date) {
-              mysqli_stmt_execute($update);
+                mysqli_stmt_execute($update);
             }
         }
-
+        mysqli_stmt_execute($wp_users);
         mysqli_stmt_execute($st);  
     }
 
