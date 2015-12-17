@@ -10,7 +10,7 @@ class TestController extends BaseController {
 		{
 			foreach($soi_data as $soi_row)
 			{
-				echo json_encode($soi_row) . "," . "\n";
+				echo json_encode($soi_row) . "\n";
 			}
 		}
 		elseif(Input::get('type') === 'excel')
