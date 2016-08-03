@@ -42,6 +42,7 @@ class TestController extends BaseController {
 	function index()
 	{
 		$soi_data = DB::connection('soi')->table('V_ELEAVE_SOI_BASIC_DATA')->get();
+        $peoplefinder_data = DB::connection('people_finder')->table('V_PEOPLE_FINDER_SOI_BASIC_DATA')->get();
 
         $soi_data_array = array_map(function($line)
         {
@@ -58,9 +59,9 @@ class TestController extends BaseController {
 		}
 		elseif(Input::get('type') === 'excel')
 		{
-			Excel::create('SOI Data', function($excel) use($soi_data_array_dealed)
+			Excel::create('E-Leave-' . date("Y-m-d"), function($excel) use($soi_data_array_dealed)
 			{
-				$excel->sheet('SOI Data', function($sheet) use($soi_data_array_dealed)
+				$excel->sheet('E-Leave', function($sheet) use($soi_data_array_dealed)
 				{
 					$sheet->fromArray($soi_data_array_dealed);
                     $sheet->cell('AT1', 'ZZHRMAN_LEGACY_ID'); // Add field name to AT1 cell
@@ -70,6 +71,17 @@ class TestController extends BaseController {
         elseif(Input::get('type') === 'array')
         {
             print_r($soi_data_array_dealed);
+        }
+        elseif(Input::get('type') === 'peoplefinder')
+        {
+            $peoplefinder_data_array = array_map(function($line)
+            {
+                return (array) $line;
+            },
+            $peoplefinder_data);
+
+            $peoplefinder_data_json = json_encode(utf8ize($peoplefinder_data_array));
+            echo $peoplefinder_data_json;
         }
 	}
 }
