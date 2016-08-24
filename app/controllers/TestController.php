@@ -63,10 +63,42 @@ class TestController extends BaseController {
 			{
 				$excel->sheet('E-Leave', function($sheet) use($soi_data_array_dealed)
 				{
+                    $input_file = 'CNUsers.xlsx';
+
+                    if (!file_exists($input_file)) {
+        	            exit("No File!");
+                    }
+
+                    $obj_PHPExcel = PHPExcel_IOFactory::load($input_file);
+
+                    $sheet_data = $obj_PHPExcel->getActiveSheet()->toArray(null, true, true, true);
+
+                    foreach ($soi_data_array_dealed as $row => &$value) {
+
+                        if (empty($value['ZZMAIL']) || (!empty($value['ZZTERM_DATE']) && $value['ZZTERM_DATE'] < date("2016-09-01"))) {
+                            unset($soi_data_array_dealed[$row]);
+                        } else {
+                            foreach ($sheet_data as $item) {
+
+                                if ($value['ZZUSERID'] === strtoupper(trim($item['D']))) {
+                                    $value['ZZMAIL'] = strtoupper(trim($item['B']));
+                                }
+                            }
+                        }
+                    }
+
 					$sheet->fromArray($soi_data_array_dealed);
                     $sheet->cell('AT1', 'ZZHRMAN_LEGACY_ID'); // Add field name to AT1 cell
                 });
-			})->export('xlsx');
+			})->store('xlsx', storage_path('/E-leave'));
+
+            Excel::create('SOI_data', function($excel) use($soi_data_array)
+            {
+                $excel->sheet('E-Leave', function($sheet) use($soi_data_array)
+                {
+                    $sheet->fromArray($soi_data_array);
+                });
+            })->export('xlsx');
 		}
         elseif(Input::get('type') === 'array')
         {
