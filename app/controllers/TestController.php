@@ -59,7 +59,7 @@ class TestController extends BaseController {
 		}
 		elseif(Input::get('type') === 'excel')
 		{
-			Excel::create('E-Leave-' . date("Y-m-d"), function($excel) use($soi_data_array_dealed)
+			Excel::create($sftp_file = 'E-Leave-' . date("Y-m-d"), function($excel) use($soi_data_array_dealed)
 			{
 				$excel->sheet('E-Leave', function($sheet) use($soi_data_array_dealed)
 				{
@@ -74,6 +74,10 @@ class TestController extends BaseController {
                     $sheet_data = $obj_PHPExcel->getActiveSheet()->toArray(null, true, true, true);
 
                     foreach ($soi_data_array_dealed as $row => &$value) {
+
+                        if ($value['ZZLEGACY_ID'] === '782141') {
+                            $value['ZZMAIL'] = 'RICARDO.RODRIGUEZ@FCAGROUP.COM';
+                        }
 
                         if (empty($value['ZZMAIL']) || (!empty($value['ZZTERM_DATE']) && $value['ZZTERM_DATE'] < date("2016-09-01"))) {
                             unset($soi_data_array_dealed[$row]);
@@ -92,6 +96,8 @@ class TestController extends BaseController {
                 });
 			})->store('xlsx', storage_path('/E-leave'));
 
+            require("SFTPConnection.php");
+
             Excel::create('SOI_data', function($excel) use($soi_data_array)
             {
                 $excel->sheet('E-Leave', function($sheet) use($soi_data_array)
@@ -99,6 +105,7 @@ class TestController extends BaseController {
                     $sheet->fromArray($soi_data_array);
                 });
             })->export('xlsx');
+            
 		}
         elseif(Input::get('type') === 'array')
         {
