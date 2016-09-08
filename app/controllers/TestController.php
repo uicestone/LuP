@@ -79,7 +79,7 @@ class TestController extends BaseController {
                             $value['ZZMAIL'] = 'RICARDO.RODRIGUEZ@FCAGROUP.COM';
                         }
 
-                        if (empty($value['ZZMAIL']) || (!empty($value['ZZTERM_DATE']) && $value['ZZTERM_DATE'] < date("2016-09-01"))) {
+                        if ($value['BUKRS'] == 'G698' || /*empty($value['ZZMAIL']) ||*/ (!empty($value['ZZTERM_DATE']) && $value['ZZTERM_DATE'] < date("2016-09-01"))) {
                             unset($soi_data_array_dealed[$row]);
                         } else {
                             foreach ($sheet_data as $item) {
@@ -105,7 +105,7 @@ class TestController extends BaseController {
                     $sheet->fromArray($soi_data_array);
                 });
             })->export('xlsx');
-            
+
 		}
         elseif(Input::get('type') === 'array')
         {
@@ -119,8 +119,84 @@ class TestController extends BaseController {
             },
             $peoplefinder_data);
 
-            $peoplefinder_data_json = json_encode(utf8ize($peoplefinder_data_array));
-            echo $peoplefinder_data_json;
+            //$peoplefinder_data_json = json_encode(utf8ize($peoplefinder_data_array));
+            //echo $peoplefinder_data_json;
+
+            Excel::create('PeopleFinder_data', function($excel) use($peoplefinder_data_array)
+            {
+                $excel->sheet('PeopleFinder', function($sheet) use($peoplefinder_data_array)
+                {
+                    $sheet->fromArray($peoplefinder_data_array);
+                });
+            })->export('xlsx');
+        }
+        elseif(Input::get('type') === 'datasync')
+        {
+            
+            DB::connection('apaconnect')->delete("DELETE FROM wp_usermeta
+                                                  WHERE meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ?",
+                                                  ['first_name', 'last_name', 'nickname', 'company_name', 'department', 'working_site_country', 'cost_center', 'manager_id', 'chief_id', 'title', 'gender']);
+
+            foreach($peoplefinder_data as $user) {
+
+                if(empty($user->ZZMAIL)) {
+
+                    continue;
+
+                } else {
+
+                    //DB::connection('apaconnect')->update("UPDATE wp_users SET employee_id = ? WHERE user_email = ?", [$user->PERSONID_EXT, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_users (user_login, user_nicename, user_email, display_name, employee_id)
+                                                          VALUES (?, ?, ?, ?, ?)",
+                                                          [$user->ZZMAIL, $user->VORNA . ' ' . $user->NACHN, $user->ZZMAIL, $user->VORNA, $user->PERSONID_EXT]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['first_name', $user->VORNA, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['last_name', $user->NACHN, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['nickname', $user->VORNA . ' ' . $user->NACHN, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['company_name', $user->BUTXT, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['department', $user->ZZDEP_OM_TXT, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['working_site_country', $user->ZZWERKS_TXT, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['cost_center', $user->KOSTL, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['manager_id', $user->ZZHRMAN_PERSID, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['chief_id', $user->ZZCHIEF_DEP, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['title', $user->ZZPLANS_TXT, $user->ZZMAIL]);
+
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['gender', $user->ZZGESCH_TXT, $user->ZZMAIL]);
+
+                }
+            }
         }
 	}
 }
