@@ -132,7 +132,7 @@ class TestController extends BaseController {
         }
         elseif(Input::get('type') === 'datasync')
         {
-            
+
             DB::connection('apaconnect')->delete("DELETE FROM wp_usermeta
                                                   WHERE meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ?",
                                                   ['first_name', 'last_name', 'nickname', 'company_name', 'department', 'working_site_country', 'cost_center', 'manager_id', 'chief_id', 'title', 'gender']);
@@ -145,11 +145,11 @@ class TestController extends BaseController {
 
                 } else {
 
-                    //DB::connection('apaconnect')->update("UPDATE wp_users SET employee_id = ? WHERE user_email = ?", [$user->PERSONID_EXT, $user->ZZMAIL]);
+                    //DB::connection('apaconnect')->update("UPDATE wp_users SET display_name = ? WHERE user_email = ?", [$user->VORNA . ' ' . $user->NACHN, $user->ZZMAIL]);
 
                     DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_users (user_login, user_nicename, user_email, display_name, employee_id)
                                                           VALUES (?, ?, ?, ?, ?)",
-                                                          [$user->ZZMAIL, $user->VORNA . ' ' . $user->NACHN, $user->ZZMAIL, $user->VORNA, $user->PERSONID_EXT]);
+                                                          [$user->ZZMAIL, $user->VORNA . ' ' . $user->NACHN, $user->ZZMAIL, $user->VORNA . ' ' . $user->NACHN, $user->PERSONID_EXT]);
 
                     DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
                                                           SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
