@@ -44,55 +44,102 @@ class TestController extends BaseController {
 		$soi_data = DB::connection('soi')->table('V_ELEAVE_SOI_BASIC_DATA')->get();
         $peoplefinder_data = DB::connection('people_finder')->table('V_PEOPLE_FINDER_SOI_BASIC_DATA')->get();
 
-        $soi_data_array = array_map(function($line)
+        $soi_data_array = utf8ize(array_map(function($line)
         {
             return (array) $line;
         },
-        $soi_data);
-
-        $soi_data_array_dealed = array_dealed($soi_data_array);
+        $soi_data));
 
 		if(Input::get('type') === 'json')
 		{
-			$soi_data_json = json_encode(utf8ize($soi_data_array_dealed));
+			$soi_data_json = json_encode($soi_data_array);
 			echo $soi_data_json;
 		}
 		elseif(Input::get('type') === 'excel')
 		{
-			Excel::create($sftp_file = 'E-Leave-' . date("Y-m-d"), function($excel) use($soi_data_array_dealed)
+			Excel::create($sftp_file = 'E-Leave-' . date("Y-m-d"), function($excel) use($soi_data_array)
 			{
-				$excel->sheet('E-Leave', function($sheet) use($soi_data_array_dealed)
+				$excel->sheet('E-Leave', function($sheet) use($soi_data_array)
 				{
-                    $input_file = 'CNUsers.xlsx';
-
-                    if (!file_exists($input_file)) {
-        	            exit("No File!");
-                    }
+                    $input_file = 'working-start-date.xlsx';
 
                     $obj_PHPExcel = PHPExcel_IOFactory::load($input_file);
 
                     $sheet_data = $obj_PHPExcel->getActiveSheet()->toArray(null, true, true, true);
+                    
+                    $FID_array = array();
+                    $EXPATS = array();
+                    foreach($soi_data_array as $row => &$value) {
 
-                    foreach ($soi_data_array_dealed as $row => &$value) {
-
-                        if ($value['ZZLEGACY_ID'] === '782141') {
-                            $value['ZZMAIL'] = 'RICARDO.RODRIGUEZ@FCAGROUP.COM';
+                        if(!in_array($value['PERSONID_EXT'], $FID_array)) {
+                            array_push($FID_array, $value['PERSONID_EXT']);
                         }
 
-                        if ($value['BUKRS'] == 'G698' || /*empty($value['ZZMAIL']) ||*/ (!empty($value['ZZTERM_DATE']) && $value['ZZTERM_DATE'] < date("2016-09-01"))) {
-                            unset($soi_data_array_dealed[$row]);
-                        } else {
-                            foreach ($sheet_data as $item) {
-
-                                if ($value['ZZUSERID'] === strtoupper(trim($item['D']))) {
-                                    $value['ZZMAIL'] = strtoupper(trim($item['B']));
-                                }
-                            }
+                        if($value['PERSG'] === '8' && !in_array($value['PERSONID_EXT'], $EXPATS)) {
+                            array_push($EXPATS, $value['PERSONID_EXT']);
                         }
                     }
 
-					$sheet->fromArray($soi_data_array_dealed);
-                    $sheet->cell('AT1', 'ZZHRMAN_LEGACY_ID'); // Add field name to AT1 cell
+                    foreach($soi_data_array as $row => &$value) {
+
+                        /* Remove user if EXPAT || base in HONG KONG || left */
+                        if((in_array($value['PERSONID_EXT'], $EXPATS) && $value['PERSG'] === '9') || $value['BUKRS'] === 'G698' || (!empty($value['ZZTERM_DATE']) || $value['STAT2'] === '0')) {
+                            unset($soi_data_array[$row]);
+
+                        } else {
+
+                            /* Set next level manager as HRBP if can't find user in rows */
+                            if(!in_array($value['ZZHRNEXT_PERSID'], $FID_array)) {
+                                $value['ZZHRNEXT_PERSID'] = $value['ZZHRREP_PERSID'];
+                            }
+
+                            /* Merge multiple department codes as local one */
+                            if($value['ZZDEP_OM_TXT'] === 'SUPPLY CHAIN MANAGEMENT' && $value['ZZDEP_OM'] !== '50015673') {
+                                $value['ZZDEP_OM'] = '50015673';
+                            }
+
+                            if($value['ZZDEP_OM_TXT'] === 'HUMAN RESOURCES' && $value['ZZDEP_OM'] !== '50012998') {
+                                $value['ZZDEP_OM'] = '50012998';
+                            }
+
+                            if($value['ZZDEP_OM_TXT'] === 'FINANCE' && $value['ZZDEP_OM'] !== '50019577') {
+                                $value['ZZDEP_OM'] = '50019577';
+                            }
+
+                            if($value['ZZDEP_OM_TXT'] === 'BUSINESS DEVELOPMENT' && $value['ZZDEP_OM'] !== '50012369') {
+                                $value['ZZDEP_OM'] = '50012369';
+                            }                        
+
+                            /* Set Product Planning Chief FID as Kim's */
+                            if($value['ZZDEP_OM'] === '50019542') {
+                                $value['ZZCHIEF_DEP'] = 'F28014236';
+                            }
+
+                            /* Change Kelly to Guido in manager & chief column */
+                            if($value['ZZHRMAN_PERSID'] === 'F15110910') {
+                                $value['ZZHRMAN_PERSID'] = 'F15021867';
+                                $value['ZZHRMAN_VORNA'] = 'GUIDO';
+                                $value['ZZHRMAN_NACHN'] = 'BONINO';
+                                $value['ZZHRMAN_MAIL'] = 'GUIDO.BONINO@FCAGROUP.COM';
+                            }
+
+                            if($value['ZZCHIEF_DEP'] === 'F15110910') {
+                                $value['ZZCHIEF_DEP'] = 'F15021867';
+                                $value['ZZCHIEF_DEP_VORN'] = 'GUIDO';
+                                $value['ZZCHIEF_DEP_NACH'] = 'BONINO';
+                            }
+
+                            /* Get work start date from input file */
+                            foreach ($sheet_data as $item) {
+
+                                if(($item['BB'] !== "#N/A" || $item['BC'] !== "#N/A") && $item['BA'] === $value['PERSONID_EXT']) {
+                                    $value['START_DATE'] = date('Y-m-d', strtotime($item['BD']));
+                                }
+                            } 
+                        }          
+                    }
+
+					$sheet->fromArray($soi_data_array);
                 });
 			})->store('xlsx', storage_path('/E-leave'));
 
@@ -109,7 +156,7 @@ class TestController extends BaseController {
 		}
         elseif(Input::get('type') === 'array')
         {
-            print_r($soi_data_array_dealed);
+            print_r($soi_data_array);
         }
         elseif(Input::get('type') === 'peoplefinder')
         {
@@ -118,9 +165,6 @@ class TestController extends BaseController {
                 return (array) $line;
             },
             $peoplefinder_data);
-
-            //$peoplefinder_data_json = json_encode(utf8ize($peoplefinder_data_array));
-            //echo $peoplefinder_data_json;
 
             Excel::create('PeopleFinder_data', function($excel) use($peoplefinder_data_array)
             {
@@ -132,6 +176,13 @@ class TestController extends BaseController {
         }
         elseif(Input::get('type') === 'datasync')
         {
+            $EXPATS = array();
+            foreach($peoplefinder_data as $user) {
+
+                if($user->PERSG === '8' && !in_array($user->PERSONID_EXT, $EXPATS)) {
+                    array_push($EXPATS, $user->PERSONID_EXT);
+                }
+            }
 
             DB::connection('apaconnect')->delete("DELETE FROM wp_usermeta
                                                   WHERE meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ?",
@@ -139,12 +190,12 @@ class TestController extends BaseController {
 
             foreach($peoplefinder_data as $user) {
 
-                if(empty($user->ZZMAIL)) {
+                if(empty($user->ZZMAIL) || $user->STAT2 === '0' || (in_array($user->PERSONID_EXT, $EXPATS) && $user->PERSG === '9')) {
 
                     continue;
 
                 } else {
-
+                    
                     //DB::connection('apaconnect')->update("UPDATE wp_users SET display_name = ? WHERE user_email = ?", [$user->VORNA . ' ' . $user->NACHN, $user->ZZMAIL]);
 
                     DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_users (user_login, user_nicename, user_email, display_name, employee_id)

@@ -10,3 +10,4 @@ Thumbs.db
 /.idea
 /app/config/production
 /app/controllers/SFTPConnection.php
+/.vscode
