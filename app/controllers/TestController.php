@@ -37,6 +37,11 @@ function array_dealed($array) {
     return $array;
 }
 
+function excel_match($input_file) {
+    $obj_PHPExcel = PHPExcel_IOFactory::load($input_file);
+    return $sheet_data = $obj_PHPExcel->getActiveSheet()->toArray(null, true, true, true);
+}
+
 class TestController extends BaseController {
 
 	function index()
@@ -60,13 +65,7 @@ class TestController extends BaseController {
 			Excel::create($sftp_file = 'E-Leave-' . date("Y-m-d"), function($excel) use($soi_data_array)
 			{
 				$excel->sheet('E-Leave', function($sheet) use($soi_data_array)
-				{
-                    $input_file = 'working-start-date.xlsx';
-
-                    $obj_PHPExcel = PHPExcel_IOFactory::load($input_file);
-
-                    $sheet_data = $obj_PHPExcel->getActiveSheet()->toArray(null, true, true, true);
-                    
+				{                                    
                     $FID_array = array();
                     $EXPATS = array();
                     foreach($soi_data_array as $row => &$value) {
@@ -79,6 +78,9 @@ class TestController extends BaseController {
                             array_push($EXPATS, $value['PERSONID_EXT']);
                         }
                     }
+
+                    $startdate_data = excel_match('working-start-date.xlsx');
+                    $cnusers_data = excel_match('chinaadusers.xlsx');
 
                     foreach($soi_data_array as $row => &$value) {
 
@@ -130,12 +132,18 @@ class TestController extends BaseController {
                             }
 
                             /* Get work start date from input file */
-                            foreach ($sheet_data as $item) {
-
+                            foreach($startdate_data as $item) {
                                 if(($item['BB'] !== "#N/A" || $item['BC'] !== "#N/A") && $item['BA'] === $value['PERSONID_EXT']) {
                                     $value['START_DATE'] = date('Y-m-d', strtotime($item['BD']));
                                 }
-                            } 
+                            }
+
+                            /* Replace TID with CID for China employees */
+                            foreach($cnusers_data as $item) {
+                                if(strtoupper(substr(trim($item['B']), 1, -1)) === strtoupper(substr(trim($value['ZZUSERID']), 1, -1))) {
+                                    $value['ZZUSERID'] = strtoupper(trim($item['B']));
+                                }
+                            }
                         }          
                     }
 
