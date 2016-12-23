@@ -63,31 +63,47 @@ class TestController extends BaseController {
 		elseif(Input::get('type') === 'excel')
 		{
 			Excel::create($sftp_file = 'E-Leave-' . date("Y-m-d"), function($excel) use($soi_data_array)
-			{
-				$excel->sheet('E-Leave', function($sheet) use($soi_data_array)
-				{                                    
-                    $FID_array = array();
-                    $EXPATS = array();
-                    foreach($soi_data_array as $row => &$value) {
+			{ 
+                $FID_array = array();
+                $EXPATS = array();
+                $approvers = array();
+                foreach($soi_data_array as $row => &$value) {
 
-                        if(!in_array($value['PERSONID_EXT'], $FID_array)) {
-                            array_push($FID_array, $value['PERSONID_EXT']);
-                        }
-
-                        if($value['PERSG'] === '8' && !in_array($value['PERSONID_EXT'], $EXPATS)) {
-                            array_push($EXPATS, $value['PERSONID_EXT']);
-                        }
+                    if(!in_array($value['PERSONID_EXT'], $FID_array)) {
+                        array_push($FID_array, $value['PERSONID_EXT']);
                     }
 
+                    if($value['PERSG'] === '8' && !in_array($value['PERSONID_EXT'], $EXPATS)) {
+                        array_push($EXPATS, $value['PERSONID_EXT']);
+                    }
+
+                    if(!in_array($value['ZZHRMAN_PERSID'], $approvers)) {
+                        array_push($approvers, $value['ZZHRMAN_PERSID']);
+                    }
+
+                    if(!in_array($value['ZZHRREP_PERSID'], $approvers)) {
+                        array_push($approvers, $value['ZZHRREP_PERSID']);
+                    }
+
+                    if(!in_array($value['ZZHRNEXT_PERSID'], $approvers)) {
+                        array_push($approvers, $value['ZZHRNEXT_PERSID']);
+                    }
+
+                    if(!in_array($value['ZZCHIEF_DEP'], $approvers)) {
+                        array_push($approvers, $value['ZZCHIEF_DEP']);
+                    }
+
+                } 
+				$excel->sheet('E-Leave', function($sheet) use($soi_data_array, $FID_array, $EXPATS, $approvers)
+				{      
                     $startdate_data = excel_match('working-start-date.xlsx');
                     $cnusers_data = excel_match('chinaadusers.xlsx');
-
+                    
                     foreach($soi_data_array as $row => &$value) {
 
-                        /* Remove user if EXPAT || base in HONG KONG || left */
-                        if((in_array($value['PERSONID_EXT'], $EXPATS) && $value['PERSG'] === '9') || $value['BUKRS'] === 'G698' || (!empty($value['ZZTERM_DATE']) || $value['STAT2'] === '0')) {
+                        /* Remove user if EXPAT OR base in HONG KONG OR left OR department is EXPAT to APAC */
+                        if((in_array($value['PERSONID_EXT'], $EXPATS) && $value['PERSG'] === '9') || $value['BUKRS'] === 'G698' || (!empty($value['ZZTERM_DATE']) && strtotime($value['ZZTERM_DATE']) < strtotime('2016-01-01'))) {
                             unset($soi_data_array[$row]);
-
                         } else {
 
                             /* Set next level manager as HRBP if can't find user in rows */
@@ -131,6 +147,11 @@ class TestController extends BaseController {
                                 $value['ZZCHIEF_DEP_NACH'] = 'BONINO';
                             }
 
+                            /* Set the chief of department Business Development as Roberto */
+                            if($value['ZZDEP_OM'] === '50012369') {
+                                $value['ZZCHIEF_DEP'] = 'F15073841';
+                            }
+                     
                             /* Get work start date from input file */
                             foreach($startdate_data as $item) {
                                 if(($item['BB'] !== "#N/A" || $item['BC'] !== "#N/A") && $item['BA'] === $value['PERSONID_EXT']) {
@@ -141,13 +162,67 @@ class TestController extends BaseController {
                             /* Replace TID with CID for China employees */
                             foreach($cnusers_data as $item) {
                                 if(strtoupper(substr(trim($item['B']), 1, -1)) === strtoupper(substr(trim($value['ZZUSERID']), 1, -1))) {
+                                    
                                     $value['ZZUSERID'] = strtoupper(trim($item['B']));
+                                    
+                                    if(empty($value['ZZMAIL'])) {
+                                        $value['ZZMAIL'] = strtoupper(trim($item['J']));
+                                    }
+
                                 }
                             }
-                        }          
+                        }
+
+                        /* Exclude data without email or userid */
+                        if(empty($value['ZZMAIL']) || empty($value['ZZUSERID']) || empty($value['ZZHIRE_DATE']) || empty($value['ZZDEP_OM']) || empty($value['ZZDEP_OM_TXT']) || empty($value['NACHN']) || empty($value['VORNA']) || empty($value['ZZGESCH_TXT']) || empty($value['ZZPERID']) || empty($value['ZZORGLV']) || empty($value['PLANS']) || empty($value['ZZPLANS_TXT']) || empty($value['ZZCHIEF_DEP']) || empty($value['PERSONID_EXT'])) {
+                            unset($soi_data_array[$row]);
+                        }
+
+                        if((in_array($value['PERSONID_EXT'], $EXPATS) && !in_array($value['PERSONID_EXT'], $approvers)) || $value['PERSONID_EXT'] === 'F15073841' || $value['PERSONID_EXT'] === 'F15021867') {
+                            // $value['UNSET'] = "True";
+                            unset($soi_data_array[$row]);
+                        }
+                        
                     }
 
 					$sheet->fromArray($soi_data_array);
+                });
+
+                $excel->sheet('Users with Empty Values', function($sheet) use($soi_data_array, $EXPATS, $approvers)
+                {
+                    foreach($soi_data_array as $row => &$value) {
+
+                        if((in_array($value['PERSONID_EXT'], $EXPATS) && !in_array($value['PERSONID_EXT'], $approvers)) || $value['PERSONID_EXT'] === 'F15073841' || $value['PERSONID_EXT'] === 'F15021867') {
+                            unset($soi_data_array[$row]);
+                        }
+
+                        if((in_array($value['PERSONID_EXT'], $EXPATS) && $value['PERSG'] === '9') || $value['BUKRS'] === 'G698' || !empty($value['ZZTERM_DATE'])) {
+                            unset($soi_data_array[$row]);
+                        }
+
+                        if(!empty($value['ZZMAIL']) && !empty($value['ZZUSERID']) && !empty($value['ZZHIRE_DATE']) && !empty($value['ZZDEP_OM']) && !empty($value['ZZDEP_OM_TXT']) && !empty($value['NACHN']) && !empty($value['VORNA']) && !empty($value['ZZGESCH_TXT']) && !empty($value['ZZPERID']) && !empty($value['ZZORGLV']) && !empty($value['PLANS']) && !empty($value['ZZPLANS_TXT']) && !empty($value['ZZHRMAN_PERSID']) && !empty($value['ZZHRREP_PERSID']) && !empty($value['ZZCHIEF_DEP']) && !empty($value['PERSONID_EXT'])) {
+                            unset($soi_data_array[$row]);
+                        }
+
+                    }
+
+                    $sheet->fromArray($soi_data_array);
+                });
+
+                $excel->sheet('Expats not in Approval', function($sheet) use($soi_data_array, $EXPATS, $approvers)
+                {
+                    foreach($soi_data_array as $row => &$value) {
+
+                        if((in_array($value['PERSONID_EXT'], $EXPATS) && $value['PERSG'] === '9') || $value['BUKRS'] === 'G698' || !empty($value['ZZTERM_DATE'])) {
+                            unset($soi_data_array[$row]);
+                        }
+
+                        if(!(in_array($value['PERSONID_EXT'], $EXPATS) && !in_array($value['PERSONID_EXT'], $approvers))) {
+                            unset($soi_data_array[$row]);
+                        }
+                    }
+
+                    $sheet->fromArray($soi_data_array);
                 });
 			})->store('xlsx', storage_path('/E-leave'));
 
@@ -160,7 +235,6 @@ class TestController extends BaseController {
                     $sheet->fromArray($soi_data_array);
                 });
             })->export('xlsx');
-
 		}
         elseif(Input::get('type') === 'array')
         {
