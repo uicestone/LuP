@@ -188,7 +188,7 @@ class TestController extends BaseController {
 					$sheet->fromArray($soi_data_array);
                 });
 
-                $excel->sheet('Users with Empty Values', function($sheet) use($soi_data_array, $EXPATS, $approvers)
+                $excel->sheet('User with Empty Value(Excluded)', function($sheet) use($soi_data_array, $EXPATS, $approvers)
                 {
                     foreach($soi_data_array as $row => &$value) {
 
@@ -200,7 +200,28 @@ class TestController extends BaseController {
                             unset($soi_data_array[$row]);
                         }
 
-                        if(!empty($value['ZZMAIL']) && !empty($value['ZZUSERID']) && !empty($value['ZZHIRE_DATE']) && !empty($value['ZZDEP_OM']) && !empty($value['ZZDEP_OM_TXT']) && !empty($value['NACHN']) && !empty($value['VORNA']) && !empty($value['ZZGESCH_TXT']) && !empty($value['ZZPERID']) && !empty($value['ZZORGLV']) && !empty($value['PLANS']) && !empty($value['ZZPLANS_TXT']) && !empty($value['ZZHRMAN_PERSID']) && !empty($value['ZZHRREP_PERSID']) && !empty($value['ZZCHIEF_DEP']) && !empty($value['PERSONID_EXT'])) {
+                        if(!empty($value['ZZMAIL']) && !empty($value['ZZUSERID']) && !empty($value['ZZHIRE_DATE']) && !empty($value['ZZDEP_OM']) && !empty($value['ZZDEP_OM_TXT']) && !empty($value['NACHN']) && !empty($value['VORNA']) && !empty($value['ZZGESCH_TXT']) && !empty($value['ZZPERID']) && !empty($value['ZZORGLV']) && !empty($value['PLANS']) && !empty($value['ZZPLANS_TXT']) && !empty($value['ZZHRMAN_PERSID']) && !empty($value['PERSONID_EXT'])) {
+                            unset($soi_data_array[$row]);
+                        }
+
+                    } 
+
+                    $sheet->fromArray($soi_data_array);
+                });
+
+                $excel->sheet('User without HRBP or Chief', function($sheet) use($soi_data_array, $EXPATS, $approvers)
+                {
+                    foreach($soi_data_array as $row => &$value) {
+
+                        if((in_array($value['PERSONID_EXT'], $EXPATS) && !in_array($value['PERSONID_EXT'], $approvers)) || $value['PERSONID_EXT'] === 'F15073841' || $value['PERSONID_EXT'] === 'F15021867') {
+                            unset($soi_data_array[$row]);
+                        }
+
+                        if((in_array($value['PERSONID_EXT'], $EXPATS) && $value['PERSG'] === '9') || $value['BUKRS'] === 'G698' || !empty($value['ZZTERM_DATE'])) {
+                            unset($soi_data_array[$row]);
+                        }
+
+                        if(!empty($value['ZZHRREP_PERSID']) && !empty($value['ZZCHIEF_DEP'])) {
                             unset($soi_data_array[$row]);
                         }
 
@@ -208,7 +229,7 @@ class TestController extends BaseController {
 
                     $sheet->fromArray($soi_data_array);
                 });
-
+                
                 $excel->sheet('Expats not in Approval', function($sheet) use($soi_data_array, $EXPATS, $approvers)
                 {
                     foreach($soi_data_array as $row => &$value) {
