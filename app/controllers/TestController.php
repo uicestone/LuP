@@ -161,7 +161,7 @@ class TestController extends BaseController {
 
                             /* Replace TID with CID for China employees */
                             foreach($cnusers_data as $item) {
-                                if(strtoupper(substr(trim($item['B']), 1, -1)) === strtoupper(substr(trim($value['ZZUSERID']), 1, -1))) {
+                                if(strtoupper(substr(trim($item['B']), -6)) === strtoupper(substr(trim($value['ZZUSERID']), -6))) {
                                     
                                     $value['ZZUSERID'] = strtoupper(trim($item['B']));
                                     
@@ -186,6 +186,9 @@ class TestController extends BaseController {
                     }
 
 					$sheet->fromArray($soi_data_array);
+                    $sheet->cell('BB1', function($cell) {
+                        $cell->setValue('WORK_START_DATE');
+                    });
                 });
 
                 $excel->sheet('User with Empty Value(Excluded)', function($sheet) use($soi_data_array, $EXPATS, $approvers)
