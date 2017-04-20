@@ -48,6 +48,7 @@ class TestController extends BaseController {
 	{
 		$soi_data = DB::connection('soi')->table('V_ELEAVE_SOI_BASIC_DATA')->get();
         $peoplefinder_data = DB::connection('people_finder')->table('V_PEOPLE_FINDER_SOI_BASIC_DATA')->get();
+        $ats_data = DB::connection('ats')->table('V_ATS_SOI_BASIC_DATA')->get();
 
         $soi_data_array = utf8ize(array_map(function($line)
         {
@@ -102,7 +103,7 @@ class TestController extends BaseController {
                     foreach($soi_data_array as $row => &$value) {
 
                         /* Remove user if EXPAT OR base in HONG KONG OR left OR department is EXPAT to APAC */
-                        if((in_array($value['PERSONID_EXT'], $EXPATS) && $value['PERSG'] === '9') || $value['BUKRS'] === 'G698' || (!empty($value['ZZTERM_DATE']) && strtotime($value['ZZTERM_DATE']) < strtotime('2016-01-01'))) {
+                        if((in_array($value['PERSONID_EXT'], $EXPATS) && $value['PERSG'] === '9') || $value['BUKRS'] === 'G698') {
                             unset($soi_data_array[$row]);
                         } else {
 
@@ -127,6 +128,10 @@ class TestController extends BaseController {
                             if($value['ZZDEP_OM_TXT'] === 'BUSINESS DEVELOPMENT' && $value['ZZDEP_OM'] !== '50012369') {
                                 $value['ZZDEP_OM'] = '50012369';
                             }                        
+
+                            if($value['ZZDEP_OM_TXT'] === 'QUALITY' && $value['ZZDEP_OM'] !== '50015663') {
+                                $value['ZZDEP_OM'] = '50015663';
+                            }
 
                             /* Set Product Planning Chief FID as Kim's */
                             if($value['ZZDEP_OM'] === '50019542') {
@@ -154,8 +159,11 @@ class TestController extends BaseController {
                      
                             /* Get work start date from input file */
                             foreach($startdate_data as $item) {
-                                if(($item['BB'] !== "#N/A" || $item['BC'] !== "#N/A") && $item['BA'] === $value['PERSONID_EXT']) {
-                                    $value['START_DATE'] = date('Y-m-d', strtotime($item['BD']));
+                                // if(!empty($item['BD']) && ($item['BB'] !== "#N/A" || $item['BC'] !== "#N/A") && $item['BA'] === $value['PERSONID_EXT']) {
+                                //     $value['WORK_START_DATE'] = date('Y-m-d', strtotime($item['BD']));
+                                // }
+                                if($item['BA'] === $value['PERSONID_EXT'] && !empty($item['BB'])) {
+                                    $value['WORK_START_DATE'] = date('Y-m-d', strtotime($item['BB']));
                                 }
                             }
 
@@ -171,10 +179,14 @@ class TestController extends BaseController {
 
                                 }
                             }
+
+                            if($value['PERSONID_EXT'] === 'F28016331') {
+                                $value['ZZMAIL'] = 'MICHELLE.ZHU@FCAGROUP.COM.CN';
+                            }
                         }
 
                         /* Exclude data without email or userid */
-                        if(empty($value['ZZMAIL']) || empty($value['ZZUSERID']) || empty($value['ZZHIRE_DATE']) || empty($value['ZZDEP_OM']) || empty($value['ZZDEP_OM_TXT']) || empty($value['NACHN']) || empty($value['VORNA']) || empty($value['ZZGESCH_TXT']) || empty($value['ZZPERID']) || empty($value['ZZORGLV']) || empty($value['PLANS']) || empty($value['ZZPLANS_TXT']) || empty($value['ZZCHIEF_DEP']) || empty($value['PERSONID_EXT'])) {
+                        if(empty($value['ZZMAIL']) || empty($value['ZZUSERID']) || empty($value['DAT01']) || empty($value['ZZDEP_OM']) || empty($value['ZZDEP_OM_TXT']) || empty($value['NACHN']) || empty($value['VORNA']) || empty($value['ZZGESCH_TXT']) || empty($value['ZZPERID']) || empty($value['ZZORGLV']) || empty($value['PLANS']) || empty($value['ZZPLANS_TXT']) || empty($value['PERSONID_EXT'])) {
                             unset($soi_data_array[$row]);
                         }
 
@@ -182,7 +194,20 @@ class TestController extends BaseController {
                             // $value['UNSET'] = "True";
                             unset($soi_data_array[$row]);
                         }
-                        
+
+                        /* Temporary rule */
+                        if($value['PERSONID_EXT'] === 'F28003620' || $value['PERSONID_EXT'] === 'F28007000') {
+                            unset($soi_data_array[$row]);
+                        }
+                        if($value['PERSONID_EXT'] === 'F28003736') {
+                            $value['ZZMAIL'] = 'WEIMIN.HU@FCAGROUP.COM.CN';
+                        }
+                        if($value['PERSONID_EXT'] === 'F28009252') {
+                            $value['ZZMAIL'] = 'TRACY.HUANG@FCAGROUP.COM.CN';
+                        }
+                        if($value['PERSONID_EXT'] === 'F28003566') {
+                            $value['ZZMAIL'] = 'TONY.WU@FCAGROUP.COM.CN';
+                        }
                     }
 
 					$sheet->fromArray($soi_data_array);
@@ -203,7 +228,7 @@ class TestController extends BaseController {
                             unset($soi_data_array[$row]);
                         }
 
-                        if(!empty($value['ZZMAIL']) && !empty($value['ZZUSERID']) && !empty($value['ZZHIRE_DATE']) && !empty($value['ZZDEP_OM']) && !empty($value['ZZDEP_OM_TXT']) && !empty($value['NACHN']) && !empty($value['VORNA']) && !empty($value['ZZGESCH_TXT']) && !empty($value['ZZPERID']) && !empty($value['ZZORGLV']) && !empty($value['PLANS']) && !empty($value['ZZPLANS_TXT']) && !empty($value['ZZHRMAN_PERSID']) && !empty($value['PERSONID_EXT'])) {
+                        if(!empty($value['ZZMAIL']) && !empty($value['ZZUSERID']) && !empty($value['DAT01']) && !empty($value['ZZDEP_OM']) && !empty($value['ZZDEP_OM_TXT']) && !empty($value['NACHN']) && !empty($value['VORNA']) && !empty($value['ZZGESCH_TXT']) && !empty($value['ZZPERID']) && !empty($value['ZZORGLV']) && !empty($value['PLANS']) && !empty($value['ZZPLANS_TXT']) && !empty($value['ZZHRMAN_PERSID']) && !empty($value['PERSONID_EXT'])) {
                             unset($soi_data_array[$row]);
                         }
 
@@ -280,6 +305,22 @@ class TestController extends BaseController {
                 });
             })->export('xlsx');
         }
+        elseif(Input::get('type') === 'ats')
+        {
+            $ats_data_array = utf8ize(array_map(function($line)
+            {
+                return (array) $line;
+            },
+            $ats_data));
+
+            Excel::create('ATS_data', function($excel) use($ats_data_array)
+            {
+                $excel->sheet('ATS', function($sheet) use($ats_data_array)
+                {
+                    $sheet->fromArray($ats_data_array);
+                });
+            })->export('xlsx');
+        }
         elseif(Input::get('type') === 'datasync')
         {
             $EXPATS = array();
@@ -291,8 +332,8 @@ class TestController extends BaseController {
             }
 
             DB::connection('apaconnect')->delete("DELETE FROM wp_usermeta
-                                                  WHERE meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ?",
-                                                  ['first_name', 'last_name', 'nickname', 'company_name', 'department', 'working_site_country', 'cost_center', 'manager_id', 'chief_id', 'title', 'gender']);
+                                                  WHERE meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ? || meta_key = ?",
+                                                  ['first_name', 'last_name', 'nickname', 'company_name', 'department', 'working_site_country', 'cost_center', 'manager_id', 'chief_id', 'title', 'gender', 'entry_date']);
 
             foreach($peoplefinder_data as $user) {
 
@@ -351,7 +392,10 @@ class TestController extends BaseController {
                     DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
                                                           SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
                                                           ['gender', $user->ZZGESCH_TXT, $user->ZZMAIL]);
-
+                    
+                    DB::connection('apaconnect')->insert("INSERT IGNORE INTO wp_usermeta (user_id, meta_key, meta_value)
+                                                          SELECT wp_users.ID , ?, ? FROM wp_users WHERE user_email = ?",
+                                                          ['entry_date', $user->DAT01, $user->ZZMAIL]);
                 }
             }
         }
