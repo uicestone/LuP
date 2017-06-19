@@ -42,6 +42,14 @@ function excel_match($input_file) {
     return $sheet_data = $obj_PHPExcel->getActiveSheet()->toArray(null, true, true, true);
 }
 
+function get_month_start_end($timestamp) {
+    $last_month = date('Y-m-01', $timestamp);
+    $last['first'] = strtotime($last_month);
+    $last['end'] = strtotime("$last_month +1 month -1 seconds");
+
+    return $last;
+}
+
 class TestController extends BaseController {
 
 	function index()
@@ -63,7 +71,7 @@ class TestController extends BaseController {
 		}
 		elseif(Input::get('type') === 'excel')
 		{
-			Excel::create($sftp_file = 'E-Leave-' . date("Y-m-d"), function($excel) use($soi_data_array)
+			Excel::create($sftp_file_eleave = 'E-Leave-' . date("Y-m-d"), function($excel) use($soi_data_array)
 			{ 
                 $FID_array = array();
                 $EXPATS = array();
@@ -208,6 +216,10 @@ class TestController extends BaseController {
                         if($value['PERSONID_EXT'] === 'F28003566') {
                             $value['ZZMAIL'] = 'TONY.WU@FCAGROUP.COM.CN';
                         }
+                        if($value['PERSONID_EXT'] === 'F37011275') {
+                            $value['ZZDEP_OM'] = '50019577';
+                            $value['ZZDEP_OM_TXT'] = 'FINANCE';
+                        }
                     }
 
 					$sheet->fromArray($soi_data_array);
@@ -313,13 +325,51 @@ class TestController extends BaseController {
             },
             $ats_data));
 
-            Excel::create('ATS_data', function($excel) use($ats_data_array)
-            {
+            Excel::create($sftp_file_ats = 'ATS-' . date("Y-m-d"), function($excel) use($ats_data_array)
+            {    
                 $excel->sheet('ATS', function($sheet) use($ats_data_array)
                 {
+                    $cnusers_data = excel_match('chinaadusers.xlsx');
+                    $pa_data = excel_match('ATS_Mapping_PA.xlsx');
+                    $pa_code = array();
+                    foreach($pa_data as $row) {
+                        if(!in_array($row['A'], $pa_code) && $row['A'] !== 'PA') {
+                            array_push($pa_code, strtoupper($row['A']));
+                        }
+                    }
+
+                    $last_month = get_month_start_end(strtotime('last month'));
+
+                    foreach($ats_data_array as $row => &$value) {
+                        /* Replace TID with CID for China employees */
+                        foreach($cnusers_data as $item) {
+                            if(strtoupper(substr(trim($item['B']), -6)) === strtoupper(substr(trim($value['ZZUSERID']), -6))) {
+                                $value['ZZUSERID'] = strtoupper(trim($item['B']));
+                                if(!empty($item['J'])) {
+                                    $value['ZZMAIL'] = strtoupper(trim($item['J']));
+                                }
+                            }
+                        }
+
+                        if(!in_array(strtoupper($value['WERKS']), $pa_code)) {
+                            $value['WERKS'] = 'AC99';
+                        }
+                        // if((!empty($value['ZZHIRE_DATE']) && (strtotime($value['ZZHIRE_DATE']) < $last_month['first'] || strtotime($value['ZZHIRE_DATE']) > $last_month['end'])) || (!empty($value['ZZTERM_DATE']) && (strtotime($value['ZZTERM_DATE']) < $last_month['first'] || strtotime($value['ZZTERM_DATE']) > $last_month['end']))) {
+                        //     unset($ats_data_array[$row]);
+                        // }
+
+                        $value['Password'] = '12345678';
+                    }
+                    
                     $sheet->fromArray($ats_data_array);
+                    $sheet->cell('H1', function($cell) {
+                        $cell->setValue('PA code');
+                    });
                 });
-            })->export('xlsx');
+            })->store('xlsx', storage_path('/ATS'));
+
+            require("SFTPConnection.php");
+
         }
         elseif(Input::get('type') === 'datasync')
         {
