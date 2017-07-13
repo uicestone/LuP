@@ -203,6 +203,11 @@ class TestController extends BaseController {
                             unset($soi_data_array[$row]);
                         }
 
+                        /* change approver to Orgun Harun */
+                        if($value['PERSONID_EXT'] === 'F28012635' || $value['PERSONID_EXT'] === 'F28014640' || $value['PERSONID_EXT'] === 'F28012894' || $value['PERSONID_EXT'] === 'F28016925' || $value['PERSONID_EXT'] === 'F28016662') {
+                            $value['ZZHRMAN_PERSID'] = 'F28999999';
+                        }
+
                         /* Temporary rule */
                         if($value['PERSONID_EXT'] === 'F28003620' || $value['PERSONID_EXT'] === 'F28007000') {
                             unset($soi_data_array[$row]);
