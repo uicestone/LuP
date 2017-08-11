@@ -1,5 +1,4 @@
 <?php
-
 function utf8ize($d) {
     if (is_array($d)) {
         foreach ($d as $k => $v) {
@@ -194,7 +193,7 @@ class TestController extends BaseController {
                         }
 
                         /* Exclude data without email or userid */
-                        if(empty($value['ZZMAIL']) || empty($value['ZZUSERID']) || empty($value['DAT01']) || empty($value['ZZDEP_OM']) || empty($value['ZZDEP_OM_TXT']) || empty($value['NACHN']) || empty($value['VORNA']) || empty($value['ZZGESCH_TXT']) || empty($value['ZZPERID']) || empty($value['ZZORGLV']) || empty($value['PLANS']) || empty($value['ZZPLANS_TXT']) || empty($value['PERSONID_EXT'])) {
+                        if((empty($value['ZZMAIL']) || empty($value['ZZUSERID']) || empty($value['DAT01']) || empty($value['ZZDEP_OM']) || empty($value['ZZDEP_OM_TXT']) || empty($value['NACHN']) || empty($value['VORNA']) || empty($value['ZZGESCH_TXT']) || empty($value['ZZPERID']) || empty($value['ZZORGLV']) || empty($value['PLANS']) || empty($value['ZZPLANS_TXT']) || empty($value['PERSONID_EXT'])) && empty($value['ZZTERM_DATE'])) {
                             unset($soi_data_array[$row]);
                         }
 
@@ -204,8 +203,13 @@ class TestController extends BaseController {
                         }
 
                         /* change approver to Orgun Harun */
-                        if($value['PERSONID_EXT'] === 'F28012635' || $value['PERSONID_EXT'] === 'F28014640' || $value['PERSONID_EXT'] === 'F28012894' || $value['PERSONID_EXT'] === 'F28016925' || $value['PERSONID_EXT'] === 'F28016662') {
+                        if($value['PERSONID_EXT'] === 'F28012635' || $value['PERSONID_EXT'] === 'F28014640' || $value['PERSONID_EXT'] === 'F28012894' || $value['PERSONID_EXT'] === 'F28016925' || $value['PERSONID_EXT'] === 'F28016662' || $value['PERSONID_EXT'] === 'F28018076') {
                             $value['ZZHRMAN_PERSID'] = 'F28999999';
+                        }
+
+                        /* change approver to Cyril */
+                        if($value['PERSONID_EXT'] === 'F28006682' || $value['PERSONID_EXT'] === 'F28011099' || $value['PERSONID_EXT'] === 'F28006683' || $value['PERSONID_EXT'] === 'F28017700' || $value['PERSONID_EXT'] === 'F28007034') {
+                            $value['ZZHRMAN_PERSID'] = 'F28888888';
                         }
 
                         /* Temporary rule */
@@ -217,6 +221,7 @@ class TestController extends BaseController {
                         }
                         if($value['PERSONID_EXT'] === 'F28009252') {
                             $value['ZZMAIL'] = 'TRACY.HUANG@FCAGROUP.COM.CN';
+                            $value['ZZHRMAN_PERSID'] = 'F28006660';
                         }
                         if($value['PERSONID_EXT'] === 'F28003566') {
                             $value['ZZMAIL'] = 'TONY.WU@FCAGROUP.COM.CN';
@@ -224,6 +229,11 @@ class TestController extends BaseController {
                         if($value['PERSONID_EXT'] === 'F37011275') {
                             $value['ZZDEP_OM'] = '50019577';
                             $value['ZZDEP_OM_TXT'] = 'FINANCE';
+                        }
+
+                        /* Delete EXPATs' join date */
+                        if($value['PERSG'] === '8' || $value['PERSG'] === '9') {
+                            $value['DAT01'] = '';
                         }
                     }
 
@@ -359,9 +369,9 @@ class TestController extends BaseController {
                         if(!in_array(strtoupper($value['WERKS']), $pa_code)) {
                             $value['WERKS'] = 'AC99';
                         }
-                        // if((!empty($value['ZZHIRE_DATE']) && (strtotime($value['ZZHIRE_DATE']) < $last_month['first'] || strtotime($value['ZZHIRE_DATE']) > $last_month['end'])) || (!empty($value['ZZTERM_DATE']) && (strtotime($value['ZZTERM_DATE']) < $last_month['first'] || strtotime($value['ZZTERM_DATE']) > $last_month['end']))) {
-                        //     unset($ats_data_array[$row]);
-                        // }
+                        if((!empty($value['ZZHIRE_DATE']) && (strtotime($value['ZZHIRE_DATE']) < $last_month['first'] || strtotime($value['ZZHIRE_DATE']) > $last_month['end'])) || (!empty($value['ZZTERM_DATE']) && (strtotime($value['ZZTERM_DATE']) < $last_month['first'] || strtotime($value['ZZTERM_DATE']) > $last_month['end']))) {
+                            unset($ats_data_array[$row]);
+                        }
 
                         $value['Password'] = '12345678';
                     }
@@ -370,10 +380,29 @@ class TestController extends BaseController {
                     $sheet->cell('H1', function($cell) {
                         $cell->setValue('PA code');
                     });
+
+                    global $p;
+                    $p = $sheet->cell('A1');
+                    
                 });
             })->store('xlsx', storage_path('/ATS'));
 
-            require("SFTPConnection.php");
+            $to = 'walter.wan@fcagroup.com.cn';
+            $subject = 'ATS uploading';
+            if(empty($p)) {
+                $message = 'Nothing.';
+            } else {
+                require("SFTPConnection.php");
+                $message = 'Succeed uploading.';
+            }
+            $from = 'APAConnect <no-reply@fcagroup.com.cn>';
+            $headers = "Content-Type: text/html charset=UTF-8;\r\nFrom: $from";
+
+            $result = mail($to , $subject, $message, $headers);
+
+            if(!$result) {
+                error_log('Failed to send email to "' . $to . '"');
+            }
 
         }
         elseif(Input::get('type') === 'datasync')
