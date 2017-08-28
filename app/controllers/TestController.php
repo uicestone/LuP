@@ -381,24 +381,69 @@ class TestController extends BaseController {
                         $cell->setValue('PA code');
                     });
 
-                    global $p;
-                    $p = $sheet->cell('A1');
+                    // static $p;
+                    // $p = $sheet->cell('A1');
                     
                 });
             })->store('xlsx', storage_path('/ATS'));
 
-            $to = 'walter.wan@fcagroup.com.cn';
-            $subject = 'ATS uploading';
-            if(empty($p)) {
-                $message = 'Nothing.';
-            } else {
-                require("SFTPConnection.php");
-                $message = 'Succeed uploading.';
-            }
-            $from = 'APAConnect <no-reply@fcagroup.com.cn>';
-            $headers = "Content-Type: text/html charset=UTF-8;\r\nFrom: $from";
+            $ats_file = excel_match('/var/www/lup/app/storage/ATS/' . $sftp_file_ats . '.xlsx');
 
-            $result = mail($to , $subject, $message, $headers);
+            $valid = array();
+            $expired = array();
+            foreach($ats_file as $row) {
+                if(strtotime($row['D'])) {
+                    array_push($valid, $row['A']);
+                }
+                if(strtotime($row['E'])) {
+                    array_push($expired, $row['A']);
+                }
+            }
+
+            if(!empty($valid) || !empty($expired)) {
+                require("SFTPConnection.php");
+            }
+
+            $subject = 'ATS user updating report';
+            $from = 'APAConnect <no-reply@fcagroup.com.cn>';
+            $to = 'Celine.ZHOU@fcagroup.com.cn';
+            $cc = 'walter.wan@fcagroup.com.cn';
+            
+            $file = '/var/www/lup/app/storage/ATS/' . $sftp_file_ats . '.xlsx';
+            $content = file_get_contents($file);
+            $content = chunk_split(base64_encode($content));
+            $uid = md5(uniqid(time()));
+            $name = basename($file);
+            
+            $header = "From: $from\r\n";
+            $header .= "Cc: $cc\r\n";
+            $header .= "MIME-Version: 1.0\r\n";
+            $header .= "Content-Type: multipart/mixed; boundary=\"" . $uid . "\"\r\n\r\n";
+            
+            $message = "Hi " . str_replace('.', ' ', strstr($to, '@', true)) . ", \r\n\r\n"
+                            . 'As of ' . date("Y-m-d") . " FCA China, you have the following items in ATS: \r\n\r\n"
+                            . count($valid) . " Users to be valid \r\n";
+            foreach($valid as $value) {
+                $message .= '  ' . $value . "\r\n";
+            }
+            $message .= "\r\n" . count($expired) . " Users to be expired \r\n";
+            foreach($expired as $value) {
+                $message .= '  ' . $value . "\r\n";
+            }
+            $message .= "\r\n" . 'Would you refer to attachment for detailed information?';
+
+            $nmessage = "--" . $uid . "\r\n";
+            $nmessage .= "Content-type:text/plain; charset=iso-8859-1\r\n";
+            $nmessage .= "Content-Transfer-Encoding: 7bit\r\n\r\n";
+            $nmessage .= $message . "\r\n\r\n";
+            $nmessage .= "--"  .$uid . "\r\n";
+            $nmessage .= "Content-Type: application/octet-stream; name=\"" . $sftp_file_ats . '.xlsx' . "\"\r\n";
+            $nmessage .= "Content-Transfer-Encoding: base64\r\n";
+            $nmessage .= "Content-Disposition: attachment; filename=\"" . $sftp_file_ats . '.xlsx' . "\"\r\n\r\n";
+            $nmessage .= $content . "\r\n\r\n";
+            $nmessage .= "--" . $uid . "--";
+            
+            $result = mail($to , $subject, $nmessage, $header);
 
             if(!$result) {
                 error_log('Failed to send email to "' . $to . '"');
